@@ -9,7 +9,7 @@ Both NCC-Sign and MQ-Sign are compiled according to the rules described in the M
 make
 ```
 
-To clean up generated files, use the following comamnd.
+To clean up generated files, use the following command.
 
 ```
 clean
@@ -28,15 +28,69 @@ make test/test_speed5
 
 ## NCC-Sign (v2.1)
 
+- Fixed SUPERCOP checksum issue in the AVX2 optimized version.
+- Bug in the rejection process has been fixed.
+- Applied some suggestions and patches from [Prof. D. J. Bernstein](https://groups.google.com/g/kpqc-bulletin/c/dcpwJ1bU5pQ/m/h-9dAUGpBgAJ).
+- Improved the reference source code structure for better performance.
+- Released Cortex-M4 optimized version.
+
+Due to the bug fix in t0, the KAT value has changed from before. For the revised KAT, see NCC-Sign/KAT(SHAKE) or NCC-Sign(AES).
+
+### NCC-Sign Performances
+
+- Measured on Intel Xeon(R) Gold 6234 processor and each value is the median of 10,000 times measure and represents clock cycles.
+
+| Scheme                    | Algorithm | Lv.1    | Lv.3        | Lv.5      |
+| :-----------------------: | :-------: | ------: | ----------: | --------: |
+| (ref) NCC-Sign-T          | Keygen    | 220,264 | 285,126     | 454,494   |
+| (ref) NCC-Sign-T          | Sign      | 543,128 | 1,044,662   | 1,584,812 |
+| (ref) NCC-Sign-T          | Verify    | 304,956 | 396,368     | 648,302   |
+| (AVX2) NCC-Sign-T         | KeyGen    | 164,184 | 218,772     | 335,440   |
+| (AVX2) NCC-Sign-T         | Sign      | 290,396 | 553,728     | 838,432   |
+| (AVX2) NCC-Sign-T         | Verify    | 158,138 | 200,242     | 340,382   |
+| (Cortex-M4) NCC-Sign-T    | KeyGen    | 1,045k  | 1,359k      | 2,045k    |
+| (Cortex-M4) NCC-Sign-T    | Sign      | 2,775k  | 4,256k      | 6,552k    |
+| (Cortex-M4) NCC-Sign-T    | Verify    | 1,322k  | 1,669k      | 2,568k    |
+
+
 ## MQ-Sign (v2.1)
 
-<details>
-<summary> Learn more </summary>
+- Made Crypto API identical to the NIST PQC standard.
+- Changes to Makefile rules allow for more concise compilation.
+- Removed some legacy parts of the public key, partially reducing the PK size.
+- Applied some suggestions and patches from [Prof. D. J. Bernstein](https://groups.google.com/g/kpqc-bulletin/c/dcpwJ1bU5pQ/m/A98n7TuiAAAJ).
 
-Due to memory limitations, KAT response file of MQ-Sign only serves 1 test case. To verify that a KAT response with 100 test cases matches, check the cheksum values.
 
+Due to the git upload limitations, KAT response file of MQ-Sign only serves 1 test case. <br>
+To verify that a KAT response with 100 test cases matches, please check the cheksum values. <br>
+Additionally, with changes to the API, the KAT require has become the same as the NIST PQC standard req. KAT has changed accordingly.
 
-MQ-Sign KAT checksum
+### MQ-Sign Performances
+
+- Measured on Intel Xeon(R) Gold 6234 processor and each value is the median of 10,000 times measure and represents clock cycles.
+
+| Scheme                | Algorithm | Lv.1          | Lv.3          | Lv.5          |
+| :-------------------: | :-------: | ------------: | ------------: | ------------: |
+| (ref) MQ-Sign_s-RR    | Keygen    | 121,645,666   | 434,302,517   | 978,413,002   |
+| (ref) MQ-Sign_m-RR    | Keygen    | 120,615,145   | 430,588,245   | 969,699,032   |
+| (ref) MQ-Sign_o-RR    | Keygen    | 117,670,429   | 416,383,251   | 941,885,381   |
+| (ref) MQ-Sign_s-RR    | Sign      | 871,306       | 1,754,967     | 3,031,335     |
+| (ref) MQ-Sign_s-RR    | Verify    | 760,114       | 1,357,774     | 2,196,068     |
+| (ref) MQ-Sign-LR      | Keygen    | 89,401,545    | 312,936,150   | 701,261,588   |
+| (ref) MQ-Sign-LR      | Sign      | 451,262       | 1,004,830     | 1,395,664     |
+| (ref) MQ-Sign-LR      | Verify    | 774,652       | 1,414,666     | 2,202,376     |
+| (AVX2) MQ-Sign_s-RR   | Keygen    | 8,574,372     | 34,464,908    | 99,201,093    |
+| (AVX2) MQ-Sign_m-RR   | Keygen    | 7,595,005     | 31,538,016    | 90,031,140    |
+| (AVX2) MQ-Sign_o-RR   | Keygen    | 5,718,159     | 25,427,415    | 75,055,554    |
+| (AVX2) MQ-Sign_s-RR   | Sign      | 89,716        | 267,562       | 537,135       |
+| (AVX2) MQ-Sign_s-RR   | Verify    | 50,868        | 175,518       | 356,881       |
+| (AVX2) MQ-Sign-LR     | Keygen    | 5,451,597     | 25,605,484    | 67,485,424    |
+| (AVX2) MQ-Sign-LR     | Sign      | 65,300        | 168,684       | 360,636       |
+| (AVX2) MQ-Sign-LR     | Verify    | 51,744        | 191,986       | 381,019       |
+
+### MQ-Sign KAT checksum
+
+- The checksum may differ depending on the newline (LF, CRLF, CR), and the provided checksum is based on LF.
 
 | Type                      | sha256sum                                                        |
 | ------------------------: | :--------------------------------------------------------------- |
@@ -54,8 +108,6 @@ MQ-Sign KAT checksum
 | MQLR-256\_112\_72         | 8fdd18905959063a9765cb8776320f13f6391e37b88f8f8e6e5a135ea6bdcf03 |
 | MQLR-256\_148\_96         | 50868df7c4656bcadcc5de5f41672750da6d0e50cf69bcbb2f3c86c40bd38b82 |
 
-</details>
-
 
 
 ### Past updates(v2.0)
@@ -64,7 +116,8 @@ MQ-Sign KAT checksum
 
 <summary> Learn more </summary>
 
-NCC-Sign and MQ-Sign version update(v2.0) are released for **KpqC competition Round 2**.
+NCC-Sign and MQ-Sign version update(v2.0) are released for **KpqC competition Round 2**. <br>
+Performaces are mesured on Intel Xeon(R) Gold 6234 processor.
 
 #### NCC-Sign (v2.0)
 
