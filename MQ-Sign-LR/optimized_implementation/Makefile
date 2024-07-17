@@ -8,7 +8,7 @@ NISTFLAGS += -Wno-unused-result -O3 -mavx2 -mpopcnt -maes -mbmi2 \
 SOURCES = aes.c blas_comm.c blas_matrix_avx2.c blas_matrix_sse.c blas_matrix.c \
 		fips202.c gf16.c mqs_keypair_computation_simd.c mqs_keypair_computation.c mqs_keypair.c \
 		mqs_simd.c parallel_matrix_op_avx2.c parallel_matrix_op.c rng.c sign.c utils_hash.c utils_prng.c
-HEADERS = aes.h api.h blas_avx2.h blas_comm.h blas_config.h blas_matrix_avx2.h \
+HEADERS = aes.h api.h blas_avx2.h blas_comm.h blas_config.h blas_matrix_avx2.h crypto_declassify.h \
 		blas_matrix_sse.h blas_matrix.h blas_sse.h blas.h fips202.h gf16_avx2.h \
 		gf16_sse.h gf16_tabs.h gf16_u64.h gf16.h hash_len_config.h mpkc_avx2.h mpkc.h mqs_blas_simd.h \
 		mqs_blas.h mqs_config.h mqs_keypair_computation_simd.h mqs_keypair_computation.h mqs_keypair.h \

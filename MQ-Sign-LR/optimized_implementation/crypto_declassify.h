@@ -1,6 +1,7 @@
-#ifndef crypto_declassify_h
-#define crypto_declassify_h
+#ifndef PQCLEAN_CRYPTO_DECLASSIFY
+#define PQCLEAN_CRYPTO_DECLASSIFY
 
-extern void crypto_declassify(void *,unsigned long long);
+/* EMPTY MACRO DEFINITION */
+#define crypto_declassify(x, y)
 
 #endif
