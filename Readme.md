@@ -57,6 +57,7 @@ Due to the bug fix in t0, the KAT value has changed from before. For the revised
 
 - Made Crypto API identical to the NIST PQC standard.
 - Changes to Makefile rules allow for more concise compilation.
+- By modifying the calculation process, performance is slightly improved.
 - Removed some legacy parts of the public key, partially reducing the PK size.
 - Applied some suggestions and patches from [Prof. D. J. Bernstein](https://groups.google.com/g/kpqc-bulletin/c/dcpwJ1bU5pQ/m/A98n7TuiAAAJ).
 
