@@ -11,31 +11,31 @@ HEADERS = aes.h api.h blas_comm.h blas_matrix_ref.h blas_matrix.h blas_u32.h bla
 		fips202.h gf16.h hash_len_config.h mpkc.h mqs_blas.h mqs_config.h mqs_keypair_computation.h \
 		mqs_keypair.h mqs.h parallel_matrix_op.h rng.h utils_hash.h utils_malloc.h utils_prng.h
 
-.PHONY: all test_bench PQCgenKAT_sign clean
+.PHONY: all test_speed PQCgenKAT_sign clean
 
 all: \
-	test_bench \
+	test_speed \
 	PQCgenKAT_sign
 
-test_bench: \
-	test/test_bench1 \
-	test/test_bench3 \
-	test/test_bench5
+test_speed: \
+	test/test_speed1 \
+	test/test_speed3 \
+	test/test_speed5
 
 PQCgenKAT_sign: \
 	PQCgenKAT_sign1 \
 	PQCgenKAT_sign3 \
 	PQCgenKAT_sign5
 
-test/test_bench1: test/test_bench.c $(SOURCES) $(HEADERS)
+test/test_speed1: test/test_speed.c $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) -D_MQS256_72_46 \
 		-o $@ $< $(SOURCES)
 
-test/test_bench3: test/test_bench.c $(SOURCES) $(HEADERS)
+test/test_speed3: test/test_speed.c $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) -D_MQS256_112_72 \
 		-o $@ $< $(SOURCES)
 
-test/test_bench5: test/test_bench.c $(SOURCES) $(HEADERS)
+test/test_speed5: test/test_speed.c $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) -D_MQS256_148_96 \
 		-o $@ $< $(SOURCES)
 
@@ -52,9 +52,9 @@ PQCgenKAT_sign5: PQCgenKAT_sign.c $(SOURCES) $(HEADERS)
 		-o $@ $< $(SOURCES)
 
 clean:
-	rm -f test/test_bench1
-	rm -f test/test_bench3
-	rm -f test/test_bench5
+	rm -f test/test_speed1
+	rm -f test/test_speed3
+	rm -f test/test_speed5
 	rm -f PQCgenKAT_sign1
 	rm -f PQCgenKAT_sign3
 	rm -f PQCgenKAT_sign5
