@@ -39,6 +39,7 @@ Due to the bug fix in t0, the KAT value has changed from before. For the revised
 ### NCC-Sign Performances
 
 - Measured on Intel Xeon(R) Gold 6234 processor and each value is the median of 10,000 times measure and represents clock cycles.
+- In case of Cortex-M4, NUCLEO-L4R5ZI used.
 
 | Scheme                    | Algorithm | Lv.1    | Lv.3        | Lv.5      |
 | :-----------------------: | :-------: | ------: | ----------: | --------: |
@@ -68,7 +69,7 @@ Additionally, with changes to the API, the KAT require has become the same as th
 
 ### MQ-Sign Performances
 
-- Measured on Intel Xeon(R) Gold 6234 processor and each value is the median of 10,000 times measure and represents clock cycles.
+- Measured on Intel Xeon(R) Gold 6234 processor and each value is the median of 10,000 times (100 times for Keygen) measure and represents clock cycles.
 
 | Scheme                | Algorithm | Lv.1          | Lv.3          | Lv.5          |
 | :-------------------: | :-------: | ------------: | ------------: | ------------: |
