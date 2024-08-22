@@ -33,15 +33,12 @@
 
 static inline uint32_t br_dec32le(const unsigned char *src)
 {
-    return (uint32_t)src[0]
-           | ((uint32_t)src[1] << 8)
-           | ((uint32_t)src[2] << 16)
-           | ((uint32_t)src[3] << 24);
+    return (uint32_t)src[0] | ((uint32_t)src[1] << 8) | ((uint32_t)src[2] << 16) | ((uint32_t)src[3] << 24);
 }
 
 static void br_range_dec32le(uint32_t *v, size_t num, const unsigned char *src)
 {
-    while(num-- > 0)
+    while (num-- > 0)
     {
         *v++ = br_dec32le(src);
         src += 4;
@@ -50,8 +47,7 @@ static void br_range_dec32le(uint32_t *v, size_t num, const unsigned char *src)
 
 static inline uint32_t br_swap32(uint32_t x)
 {
-    x = ((x & (uint32_t)0x00FF00FF) << 8)
-        | ((x >> 8) & (uint32_t)0x00FF00FF);
+    x = ((x & (uint32_t)0x00FF00FF) << 8) | ((x >> 8) & (uint32_t)0x00FF00FF);
     return (x << 16) | (x >> 16);
 }
 
@@ -65,7 +61,7 @@ static inline void br_enc32le(unsigned char *dst, uint32_t x)
 
 static void br_range_enc32le(unsigned char *dst, const uint32_t *v, size_t num)
 {
-    while(num-- > 0)
+    while (num-- > 0)
     {
         br_enc32le(dst, *v++);
         dst += 4;
@@ -249,17 +245,19 @@ static void br_aes_ct64_bitslice_Sbox(uint64_t *q)
 
 static void br_aes_ct64_ortho(uint64_t *q)
 {
-#define SWAPN(cl, ch, s, x, y)   do { \
-        uint64_t a, b; \
-        a = (x); \
-        b = (y); \
+#define SWAPN(cl, ch, s, x, y)                                      \
+    do                                                              \
+    {                                                               \
+        uint64_t a, b;                                              \
+        a = (x);                                                    \
+        b = (y);                                                    \
         (x) = (a & (uint64_t)(cl)) | ((b & (uint64_t)(cl)) << (s)); \
         (y) = ((a & (uint64_t)(ch)) >> (s)) | (b & (uint64_t)(ch)); \
-    } while(0)
+    } while (0)
 
-#define SWAP2(x, y)    SWAPN(0x5555555555555555, 0xAAAAAAAAAAAAAAAA,  1, x, y)
-#define SWAP4(x, y)    SWAPN(0x3333333333333333, 0xCCCCCCCCCCCCCCCC,  2, x, y)
-#define SWAP8(x, y)    SWAPN(0x0F0F0F0F0F0F0F0F, 0xF0F0F0F0F0F0F0F0,  4, x, y)
+#define SWAP2(x, y) SWAPN(0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 1, x, y)
+#define SWAP4(x, y) SWAPN(0x3333333333333333, 0xCCCCCCCCCCCCCCCC, 2, x, y)
+#define SWAP8(x, y) SWAPN(0x0F0F0F0F0F0F0F0F, 0xF0F0F0F0F0F0F0F0, 4, x, y)
 
     SWAP2(q[0], q[1]);
     SWAP2(q[2], q[3]);
@@ -328,9 +326,8 @@ static void br_aes_ct64_interleave_out(uint32_t *w, uint64_t q0, uint64_t q1)
 }
 
 static const unsigned char Rcon[] =
-{
-    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
-};
+    {
+        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36};
 
 static uint32_t sub_word(uint32_t x)
 {
@@ -355,14 +352,14 @@ static void br_aes_ct64_keysched(uint64_t *comp_skey, const unsigned char *key, 
     nkf = ((nrounds + 1) << 2);
     br_range_dec32le(skey, (key_len >> 2), key);
     tmp = skey[(key_len >> 2) - 1];
-    for(i = nk, j = 0, k = 0 ; i < nkf ; i++)
+    for (i = nk, j = 0, k = 0; i < nkf; i++)
     {
-        if(j == 0)
+        if (j == 0)
         {
             tmp = (tmp << 24) | (tmp >> 8);
             tmp = sub_word(tmp) ^ Rcon[k];
         }
-        else if(nk > 6 && j == 4)
+        else if (nk > 6 && j == 4)
         {
             tmp = sub_word(tmp);
         }
@@ -370,14 +367,14 @@ static void br_aes_ct64_keysched(uint64_t *comp_skey, const unsigned char *key, 
         tmp ^= skey[i - nk];
         skey[i] = tmp;
 
-        if(++j == nk)
+        if (++j == nk)
         {
             j = 0;
             k++;
         }
     }
 
-    for(i = 0, j = 0 ; i < nkf ; i += 4, j += 2)
+    for (i = 0, j = 0; i < nkf; i += 4, j += 2)
     {
         uint64_t q[8];
 
@@ -390,15 +387,9 @@ static void br_aes_ct64_keysched(uint64_t *comp_skey, const unsigned char *key, 
         q[7] = q[4];
         br_aes_ct64_ortho(q);
         comp_skey[j + 0] =
-            (q[0] & (uint64_t)0x1111111111111111)
-            | (q[1] & (uint64_t)0x2222222222222222)
-            | (q[2] & (uint64_t)0x4444444444444444)
-            | (q[3] & (uint64_t)0x8888888888888888);
+            (q[0] & (uint64_t)0x1111111111111111) | (q[1] & (uint64_t)0x2222222222222222) | (q[2] & (uint64_t)0x4444444444444444) | (q[3] & (uint64_t)0x8888888888888888);
         comp_skey[j + 1] =
-            (q[4] & (uint64_t)0x1111111111111111)
-            | (q[5] & (uint64_t)0x2222222222222222)
-            | (q[6] & (uint64_t)0x4444444444444444)
-            | (q[7] & (uint64_t)0x8888888888888888);
+            (q[4] & (uint64_t)0x1111111111111111) | (q[5] & (uint64_t)0x2222222222222222) | (q[6] & (uint64_t)0x4444444444444444) | (q[7] & (uint64_t)0x8888888888888888);
     }
 }
 
@@ -407,7 +398,7 @@ static void br_aes_ct64_skey_expand(uint64_t *skey, const uint64_t *comp_skey, u
     unsigned u, v, n;
 
     n = (nrounds + 1) << 1;
-    for(u = 0, v = 0 ; u < n ; u++, v += 4)
+    for (u = 0, v = 0; u < n; u++, v += 4)
     {
         uint64_t x0, x1, x2, x3;
 
@@ -442,18 +433,12 @@ static inline void shift_rows(uint64_t *q)
 {
     int i;
 
-    for(i = 0 ; i < 8 ; i++)
+    for (i = 0; i < 8; i++)
     {
         uint64_t x;
 
         x = q[i];
-        q[i] = (x & (uint64_t)0x000000000000FFFF)
-               | ((x & (uint64_t)0x00000000FFF00000) >> 4)
-               | ((x & (uint64_t)0x00000000000F0000) << 12)
-               | ((x & (uint64_t)0x0000FF0000000000) >> 8)
-               | ((x & (uint64_t)0x000000FF00000000) << 8)
-               | ((x & (uint64_t)0xF000000000000000) >> 12)
-               | ((x & (uint64_t)0x0FFF000000000000) << 4);
+        q[i] = (x & (uint64_t)0x000000000000FFFF) | ((x & (uint64_t)0x00000000FFF00000) >> 4) | ((x & (uint64_t)0x00000000000F0000) << 12) | ((x & (uint64_t)0x0000FF0000000000) >> 8) | ((x & (uint64_t)0x000000FF00000000) << 8) | ((x & (uint64_t)0xF000000000000000) >> 12) | ((x & (uint64_t)0x0FFF000000000000) << 4);
     }
 }
 
@@ -501,14 +486,14 @@ static void aes_ecb4x(unsigned char out[64], const uint32_t ivw[16], const uint6
     unsigned int i;
 
     memcpy(w, ivw, sizeof(w));
-    for(i = 0 ; i < 4 ; i++)
+    for (i = 0; i < 4; i++)
     {
         br_aes_ct64_interleave_in(&q[i], &q[i + 4], w + (i << 2));
     }
     br_aes_ct64_ortho(q);
 
     add_round_key(q, sk_exp);
-    for(i = 1 ; i < nrounds ; i++)
+    for (i = 1; i < nrounds; i++)
     {
         br_aes_ct64_bitslice_Sbox(q);
         shift_rows(q);
@@ -520,7 +505,7 @@ static void aes_ecb4x(unsigned char out[64], const uint32_t ivw[16], const uint6
     add_round_key(q, sk_exp + 8 * nrounds);
 
     br_aes_ct64_ortho(q);
-    for(i = 0 ; i < 4 ; i++)
+    for (i = 0; i < 4; i++)
     {
         br_aes_ct64_interleave_out(w + (i << 2), q[i], q[i + 4]);
     }
@@ -532,7 +517,7 @@ static void aes_ecb(unsigned char *out, const unsigned char *in, size_t nblocks,
     uint32_t blocks[16];
     unsigned char t[64];
 
-    while(nblocks >= 4)
+    while (nblocks >= 4)
     {
         br_range_dec32le(blocks, 16, in);
         aes_ecb4x(out, blocks, rkeys, nrounds);
@@ -541,7 +526,7 @@ static void aes_ecb(unsigned char *out, const unsigned char *in, size_t nblocks,
         out += 64;
     }
 
-    if(nblocks)
+    if (nblocks)
     {
         br_range_dec32le(blocks, nblocks * 4, in);
         aes_ecb4x(t, blocks, rkeys, nrounds);
@@ -551,55 +536,55 @@ static void aes_ecb(unsigned char *out, const unsigned char *in, size_t nblocks,
 
 static inline void aesni_encrypt4(uint8_t out[64], __m128i *n, const __m128i rkeys[16])
 {
-    __m128i f,f0,f1,f2,f3;
-    const __m128i idx = _mm_set_epi8(8,9,10,11,12,13,14,15,7,6,5,4,3,2,1,0);
+    __m128i f, f0, f1, f2, f3;
+    const __m128i idx = _mm_set_epi8(8, 9, 10, 11, 12, 13, 14, 15, 7, 6, 5, 4, 3, 2, 1, 0);
 
     /* Load current counter value */
     f = _mm_load_si128(n);
 
     /* Increase counter in 4 consecutive blocks */
-    f0 = _mm_shuffle_epi8(_mm_add_epi64(f,_mm_set_epi64x(0,0)),idx);
-    f1 = _mm_shuffle_epi8(_mm_add_epi64(f,_mm_set_epi64x(1,0)),idx);
-    f2 = _mm_shuffle_epi8(_mm_add_epi64(f,_mm_set_epi64x(2,0)),idx);
-    f3 = _mm_shuffle_epi8(_mm_add_epi64(f,_mm_set_epi64x(3,0)),idx);
+    f0 = _mm_shuffle_epi8(_mm_add_epi64(f, _mm_set_epi64x(0, 0)), idx);
+    f1 = _mm_shuffle_epi8(_mm_add_epi64(f, _mm_set_epi64x(1, 0)), idx);
+    f2 = _mm_shuffle_epi8(_mm_add_epi64(f, _mm_set_epi64x(2, 0)), idx);
+    f3 = _mm_shuffle_epi8(_mm_add_epi64(f, _mm_set_epi64x(3, 0)), idx);
 
     /* Write counter for next iteration, increased by 4 */
-    _mm_store_si128(n,_mm_add_epi64(f,_mm_set_epi64x(4,0)));
+    _mm_store_si128(n, _mm_add_epi64(f, _mm_set_epi64x(4, 0)));
 
     /* Actual AES encryption, 4x interleaved */
-    f  = _mm_load_si128(&rkeys[0]);
-    f0 = _mm_xor_si128(f0,f);
-    f1 = _mm_xor_si128(f1,f);
-    f2 = _mm_xor_si128(f2,f);
-    f3 = _mm_xor_si128(f3,f);
+    f = _mm_load_si128(&rkeys[0]);
+    f0 = _mm_xor_si128(f0, f);
+    f1 = _mm_xor_si128(f1, f);
+    f2 = _mm_xor_si128(f2, f);
+    f3 = _mm_xor_si128(f3, f);
 
-    for(int i = 1 ; i < 14 ; i++)
+    for (int i = 1; i < 14; i++)
     {
-        f  = _mm_load_si128(&rkeys[i]);
-        f0 = _mm_aesenc_si128(f0,f);
-        f1 = _mm_aesenc_si128(f1,f);
-        f2 = _mm_aesenc_si128(f2,f);
-        f3 = _mm_aesenc_si128(f3,f);
+        f = _mm_load_si128(&rkeys[i]);
+        f0 = _mm_aesenc_si128(f0, f);
+        f1 = _mm_aesenc_si128(f1, f);
+        f2 = _mm_aesenc_si128(f2, f);
+        f3 = _mm_aesenc_si128(f3, f);
     }
 
-    f  = _mm_load_si128(&rkeys[14]);
-    f0 = _mm_aesenclast_si128(f0,f);
-    f1 = _mm_aesenclast_si128(f1,f);
-    f2 = _mm_aesenclast_si128(f2,f);
-    f3 = _mm_aesenclast_si128(f3,f);
+    f = _mm_load_si128(&rkeys[14]);
+    f0 = _mm_aesenclast_si128(f0, f);
+    f1 = _mm_aesenclast_si128(f1, f);
+    f2 = _mm_aesenclast_si128(f2, f);
+    f3 = _mm_aesenclast_si128(f3, f);
 
     /* Write results */
-    _mm_storeu_si128((__m128i*)(out+ 0),f0);
-    _mm_storeu_si128((__m128i*)(out+16),f1);
-    _mm_storeu_si128((__m128i*)(out+32),f2);
-    _mm_storeu_si128((__m128i*)(out+48),f3);
+    _mm_storeu_si128((__m128i *)(out + 0), f0);
+    _mm_storeu_si128((__m128i *)(out + 16), f1);
+    _mm_storeu_si128((__m128i *)(out + 32), f2);
+    _mm_storeu_si128((__m128i *)(out + 48), f3);
 }
 
 void aes256_ecb_keyexp(aes256ctx *r, const unsigned char *key)
 {
     uint64_t skey[30];
     r->sk_exp = malloc(sizeof(uint64_t) * PQC_AES256_STATESIZE);
-    if(r->sk_exp == NULL)
+    if (r->sk_exp == NULL)
     {
         exit(111);
     }
@@ -628,8 +613,8 @@ void aes256ctr_init(aes256ctr_ctx *state, const uint8_t key[32], const uint64_t 
     __m128i key0, key1, temp0, temp1, temp2, temp4;
     int idx = 0;
 
-    key0 = _mm_loadu_si128((__m128i *)(key+ 0));
-    key1 = _mm_loadu_si128((__m128i *)(key+16));
+    key0 = _mm_loadu_si128((__m128i *)(key + 0));
+    key1 = _mm_loadu_si128((__m128i *)(key + 16));
     state->n = _mm_loadl_epi64((__m128i *)&nonce);
 
     state->rkeys[idx++] = key0;
@@ -637,24 +622,24 @@ void aes256ctr_init(aes256ctr_ctx *state, const uint8_t key[32], const uint64_t 
     temp2 = key1;
     temp4 = _mm_setzero_si128();
 
-    #define BLOCK1(IMM)                                                     \
-    temp1 = _mm_aeskeygenassist_si128(temp2, IMM);                        \
-    state->rkeys[idx++] = temp2;                                          \
-    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp0, 0x10);  \
-    temp0 = _mm_xor_si128(temp0, temp4);                                  \
-    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp0, 0x8c);  \
-    temp0 = _mm_xor_si128(temp0, temp4);                                  \
-    temp1 = (__m128i)_mm_shuffle_ps((__m128)temp1, (__m128)temp1, 0xff);  \
+#define BLOCK1(IMM)                                                      \
+    temp1 = _mm_aeskeygenassist_si128(temp2, IMM);                       \
+    state->rkeys[idx++] = temp2;                                         \
+    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp0, 0x10); \
+    temp0 = _mm_xor_si128(temp0, temp4);                                 \
+    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp0, 0x8c); \
+    temp0 = _mm_xor_si128(temp0, temp4);                                 \
+    temp1 = (__m128i)_mm_shuffle_ps((__m128)temp1, (__m128)temp1, 0xff); \
     temp0 = _mm_xor_si128(temp0, temp1)
 
-    #define BLOCK2(IMM)                                                     \
-    temp1 = _mm_aeskeygenassist_si128(temp0, IMM);                        \
-    state->rkeys[idx++] = temp0;                                          \
-    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp2, 0x10);  \
-    temp2 = _mm_xor_si128(temp2, temp4);                                  \
-    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp2, 0x8c);  \
-    temp2 = _mm_xor_si128(temp2, temp4);                                  \
-    temp1 = (__m128i)_mm_shuffle_ps((__m128)temp1, (__m128)temp1, 0xaa);  \
+#define BLOCK2(IMM)                                                      \
+    temp1 = _mm_aeskeygenassist_si128(temp0, IMM);                       \
+    state->rkeys[idx++] = temp0;                                         \
+    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp2, 0x10); \
+    temp2 = _mm_xor_si128(temp2, temp4);                                 \
+    temp4 = (__m128i)_mm_shuffle_ps((__m128)temp4, (__m128)temp2, 0x8c); \
+    temp2 = _mm_xor_si128(temp2, temp4);                                 \
+    temp1 = (__m128i)_mm_shuffle_ps((__m128)temp1, (__m128)temp1, 0xaa); \
     temp2 = _mm_xor_si128(temp2, temp1)
 
     BLOCK1(0x01);
@@ -683,10 +668,9 @@ void aes256ctr_squeezeblocks(uint8_t *out, size_t nblocks, aes256ctr_ctx *state)
 {
     size_t i;
 
-    for(i = 0 ; i < nblocks ; i++)
+    for (i = 0; i < nblocks; i++)
     {
         aesni_encrypt4(out, &state->n, state->rkeys);
         out += 64;
     }
 }
-

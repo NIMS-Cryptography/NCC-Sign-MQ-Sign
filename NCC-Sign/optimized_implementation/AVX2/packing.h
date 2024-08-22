@@ -5,21 +5,21 @@
 #include "params.h"
 #include "poly.h"
 
-void polyeta_pack(uint8_t *r, const poly *a);
+void polyeta_pack(uint8_t r[POLYETA_PACKEDBYTES], const poly *restrict a);
 
-void polyeta_unpack(poly *r, const uint8_t *a);
+void polyeta_unpack(poly *restrict r, const uint8_t a[POLYETA_PACKEDBYTES]);
 
-void polyt1_pack(uint8_t *r, const poly *a);
+void polyt1_pack(uint8_t r[POLYT1_PACKEDBYTES], const poly *restrict a);
 
-void polyt1_unpack(poly *r, const uint8_t *a);
+void polyt1_unpack(poly *restrict r, const uint8_t a[POLYT1_PACKEDBYTES]);
 
-void polyt0_pack(uint8_t *r, const poly *a);
+void polyt0_pack(uint8_t r[POLYT0_PACKEDBYTES], const poly *restrict a);
 
-void polyt0_unpack(poly *r, const uint8_t *a);
+void polyt0_unpack(poly *restrict r, const uint8_t a[POLYT0_PACKEDBYTES]);
 
-void polyz_pack(uint8_t *r, const poly *a);
+void polyz_pack(uint8_t r[POLYZ_PACKEDBYTES], const poly *restrict a);
 
-void polyz_unpack(poly *r, const uint8_t *a);
+void polyz_unpack(poly *restrict r, const uint8_t a[POLYZ_PACKEDBYTES]);
 
 void polyw1_pack(uint8_t *r, const poly *a);
 
@@ -57,4 +57,6 @@ int unpack_sig(uint8_t c[SEEDBYTES],
                poly *h,
                const uint8_t sig[CRYPTO_BYTES]);
 
+__m256i convert_and_pack(__m256i a, __m256i b);
+__m256i or_3rd_and_5th_bytes(__m256i a);
 #endif

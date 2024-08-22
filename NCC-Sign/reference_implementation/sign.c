@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include "crypto_declassify.h"
 
-int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
+
+int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
+{
 	uint8_t zeta[SEEDBYTES];
 	uint8_t seedbuf[3 * SEEDBYTES];
 	uint8_t tr[SEEDBYTES];
@@ -50,10 +52,10 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 }
 
 int crypto_sign_signature(uint8_t *sig,
-                        	size_t *siglen,
-                        	const uint8_t *m,
-                        	size_t mlen,
-                        	const uint8_t *sk)
+						  size_t *siglen,
+						  const uint8_t *m,
+						  size_t mlen,
+						  const uint8_t *sk)
 {
 	unsigned int n;
 	uint8_t seedbuf[3 * SEEDBYTES + 2 * CRHBYTES];
@@ -77,11 +79,7 @@ int crypto_sign_signature(uint8_t *sig,
 	shake256_finalize(&state);
 	shake256_squeeze(mu, CRHBYTES, &state);
 
-#ifdef NIMS_RANDOMIZED_SIGNING
-	randombytes(rho, CRHBYTES);
-#else
 	shake256(rho, CRHBYTES, key, SEEDBYTES + CRHBYTES);
-#endif
 
 	poly_uniform(&mat, zeta, 0);
 
@@ -110,55 +108,48 @@ rej:
 	poly_challenge(&cp, sig);
 
 	ntt(cp.coeffs, cp.coeffs);
-	poly_base_mul(&z, &cp, &s1);
-	invntt_tomont(z.coeffs, z.coeffs);
-	poly_caddq(&z);
-
-	poly_add(&z, &z, &y);
-  	poly_reduce(&z);
-	rejcond = poly_chknorm(&z, GAMMA1 - BETA);	// patch
-	crypto_declassify(&rejcond,sizeof rejcond);
-	if (rejcond) {
- 		goto rej;
- 	}
-//	if (poly_chknorm(&z, GAMMA1 - BETA)){
-//		goto rej;
-//	}
 
 	poly_base_mul(&h, &cp, &s2);
 	invntt_tomont(h.coeffs, h.coeffs);
-	poly_caddq(&h);
 
 	poly_sub(&w0, &w0, &h);
-  	poly_reduce(&w0);
+	poly_reduce(&w0);
 	rejcond = poly_chknorm(&w0, GAMMA2 - BETA);	// patch
 	crypto_declassify(&rejcond,sizeof rejcond);
-	if (rejcond) {
- 		goto rej;
- 	}
-//	if (poly_chknorm(&w0, GAMMA2 - BETA)){
-//		goto rej;
-//	}
+	if (rejcond)
+	{
+		goto rej;
+	}
+
+	poly_base_mul(&z, &cp, &s1);
+	invntt_tomont(z.coeffs, z.coeffs);
+
+	poly_add(&z, &z, &y);
+	poly_reduce(&z);
+	rejcond = poly_chknorm(&z, GAMMA1 - BETA);	// patch
+	crypto_declassify(&rejcond,sizeof rejcond);
+	if (rejcond)
+	{
+		goto rej;
+	}
 
 	poly_base_mul(&h, &cp, &t0);
 	invntt_tomont(h.coeffs, h.coeffs);
-	poly_caddq(&h);
 
 	poly_reduce(&h);
 	rejcond = poly_chknorm(&h, GAMMA2);	// patch
 	crypto_declassify(&rejcond,sizeof rejcond);
-	if (rejcond) {
- 		goto rej;
- 	}
-//	if (poly_chknorm(&h, GAMMA2)){
-//		goto rej;
-//	}
+	if (rejcond)
+	{
+		goto rej;
+	}
 
 	poly_add(&w0, &w0, &h);
 
 	n = poly_make_hint(&h, &w0, &w1);
 
-	if (n > OMEGA){
+	if (n > OMEGA)
+	{
 		goto rej;
 	}
 
@@ -168,10 +159,10 @@ rej:
 }
 
 int crypto_sign(uint8_t *sm,
-              	size_t *smlen,
-              	const uint8_t *m,
-              	size_t mlen,
-              	const uint8_t *sk)
+				size_t *smlen,
+				const uint8_t *m,
+				size_t mlen,
+				const uint8_t *sk)
 {
 	size_t i;
 
@@ -183,10 +174,10 @@ int crypto_sign(uint8_t *sm,
 }
 
 int crypto_sign_verify(const uint8_t *sig,
-                       size_t siglen,
-                       const uint8_t *m,
-                       size_t mlen,
-                       const uint8_t *pk)
+					   size_t siglen,
+					   const uint8_t *m,
+					   size_t mlen,
+					   const uint8_t *pk)
 {
 	unsigned int i;
 	uint8_t buf[POLYW1_PACKEDBYTES];
@@ -220,17 +211,14 @@ int crypto_sign_verify(const uint8_t *sig,
 
 	ntt(z.coeffs, z.coeffs);
 	poly_base_mul(&w1, &z, &mat);
-	invntt_tomont(w1.coeffs, w1.coeffs);
-	poly_caddq(&w1);
 
 	poly_shiftl(&t1);
 
 	ntt(t11.coeffs, t1.coeffs);
 	ntt(cp.coeffs, cp.coeffs);
 	poly_base_mul(&t1, &cp, &t11);
-	invntt_tomont(t1.coeffs, t1.coeffs);
-	poly_caddq(&t1);
 	poly_sub(&w1, &w1, &t1);
+	invntt_tomont(w1.coeffs, w1.coeffs);
 	poly_caddq(&w1);
 
 	poly_use_hint(&w1, &w1, &h);
@@ -250,10 +238,10 @@ int crypto_sign_verify(const uint8_t *sig,
 }
 
 int crypto_sign_open(uint8_t *m,
-                     size_t *mlen,
-                     const uint8_t *sm,
-                     size_t smlen,
-                     const uint8_t *pk)
+					 size_t *mlen,
+					 const uint8_t *sm,
+					 size_t smlen,
+					 const uint8_t *pk)
 {
 	size_t i;
 
@@ -263,7 +251,8 @@ int crypto_sign_open(uint8_t *m,
 	*mlen = smlen - CRYPTO_BYTES;
 	if (crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk))
 		goto badsig;
-	else {
+	else
+	{
 		for (i = 0; i < *mlen; ++i)
 			m[i] = sm[CRYPTO_BYTES + i];
 		return 0;

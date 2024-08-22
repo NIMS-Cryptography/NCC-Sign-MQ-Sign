@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 #ifndef NIMS_TRI_NTT_MODE
-#define NIMS_TRI_NTT_MODE 1
+#define NIMS_TRI_NTT_MODE 3
 #endif
 
 #if NIMS_TRI_NTT_MODE == 1

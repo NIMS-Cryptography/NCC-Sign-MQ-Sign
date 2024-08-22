@@ -8,18 +8,12 @@
 #define SEEDBYTES 32
 #define CRHBYTES 64
 
-#define ROOT_OF_UNITY 1753
-
 #if NIMS_TRI_NTT_MODE == 1
 #define N 1152
-#define N_avx 384 //(N/3)
-#define T_avx 288 //(N / 4)
-#define T_len (N / 3) >> 6
-#define T_start T_avx >> 4
 #define P 1152
 #define NR 1152
 #define Q 8401537
-#define QINV 2245397889 // q^(-1) mod 2^32
+#define QINV (-2049569407) // q^(-1) mod^{+-} 2^32
 #define MONT 1781889 // 2^32 % Q
 #define D 12
 #define ETA 1
@@ -28,12 +22,9 @@
 #define GAMMA1 (1<<18)
 #define GAMMA2 131274
 #define OMEGA 80
+
 #elif NIMS_TRI_NTT_MODE == 3
 #define N 1536
-#define N_avx 512 //(N/3)
-#define T_avx 384 //(N / 4)
-#define T_len (N / 3) >> 8
-#define T_start T_avx >> 3
 #define P 1536
 #define NR 1536
 #define Q 8397313
@@ -46,12 +37,9 @@
 #define GAMMA1 (1<<18)
 #define GAMMA2 131208
 #define OMEGA 80
+
 #elif NIMS_TRI_NTT_MODE == 5
 #define N 2304
-#define N_avx 768 //(N/3)
-#define T_avx 576 //(N / 4)
-#define T_len (N / 3) >> 7
-#define T_start T_avx >> 5
 #define P 2304
 #define NR 2304
 #define Q 8404993

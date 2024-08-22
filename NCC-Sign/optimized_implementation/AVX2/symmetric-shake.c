@@ -3,8 +3,8 @@
 #include "symmetric.h"
 
 void NIMS_shake128_stream_init(keccak_state *state,
-                                    const uint8_t seed[SEEDBYTES],
-                                    uint16_t nonce)
+                               const uint8_t seed[SEEDBYTES],
+                               uint16_t nonce)
 {
   uint8_t t[2];
   t[0] = nonce;
@@ -17,8 +17,8 @@ void NIMS_shake128_stream_init(keccak_state *state,
 }
 
 void NIMS_shake256_stream_init(keccak_state *state,
-                                    const uint8_t seed[CRHBYTES],
-                                    uint16_t nonce)
+                               const uint8_t seed[CRHBYTES],
+                               uint16_t nonce)
 {
   uint8_t t[2];
   t[0] = nonce;

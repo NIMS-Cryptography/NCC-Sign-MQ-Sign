@@ -9,4 +9,3 @@ void NIMS_aes256ctr_init(aes256ctr_ctx *state, const uint8_t key[32], uint16_t n
   expnonce[1] = nonce >> 8;
   aes256ctr_init(state, key, expnonce);
 }
-

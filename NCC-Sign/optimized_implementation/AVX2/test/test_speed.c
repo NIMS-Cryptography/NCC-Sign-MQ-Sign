@@ -5,14 +5,13 @@
 #include "cpucycles.h"
 #include "speed_print.h"
 #include "stdio.h"
+#include "time.h"
 
 #define NTESTS 10000
 
 uint64_t t[NTESTS];
 
-
-
-uint64_t t_mul=0,t_notmul=0,t_overhead;
+uint64_t t_mul = 0, t_notmul = 0, t_overhead;
 int main(void)
 {
   unsigned int i;
@@ -20,77 +19,70 @@ int main(void)
   uint8_t pk[CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[CRYPTO_SECRETKEYBYTES];
   uint8_t sm[CRYPTO_BYTES + CRHBYTES];
-  uint8_t seed[CRHBYTES];
-  poly a;
-  __m256i b[N_avx], temp[N_avx];
-  int32_t c[N_avx * 3];
+  poly mat;
+  poly eta, gamma, a, b, c;
+  uint8_t seed[3 * SEEDBYTES];
+  srand(time(NULL));
 
-  t_overhead=19;
+  t_overhead = 19;
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    poly_uniform_avx_4way(b, seed, 0);
+    poly_uniform_avx(&mat, seed, 0);
   }
-  print_results("poly_uniform_matrix:", t, NTESTS);
+  print_results("nims", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    poly_uniform_eta(&a, seed, 0);
+    poly_uniform_eta(&eta, seed, 0);
   }
   print_results("poly_uniform_eta:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    poly_uniform_gamma1(&a, seed, 0);
+    poly_uniform_gamma1(&gamma, seed, 0);
   }
   print_results("poly_uniform_gamma1:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    ntt_avx_4way(b, c);
+    ntt_avx_asm(&b, &a);
   }
   print_results("poly_ntt:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    invntt_tomont_avx_4way(c, b);
+    invntt_avx_asm(&c, &b);
   }
   print_results("poly_invntt:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    poly_base_mul_avx_4way(b, b, temp);
+    poly_base_mul_avx_asm(&c, &b, &a);
   }
-  print_results("poly_base_mulx4:", t, NTESTS);
+  print_results("poly_base_mul:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
-  {
-    t[i] = cpucycles();
-    poly_challenge(&a, seed);
-  }
-  print_results("poly_challenge:", t, NTESTS);
-
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
     crypto_sign_keypair(pk, sk);
   }
   print_results("Keypair:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
     crypto_sign(sm, &smlen, sm, CRHBYTES, sk);
   }
   print_results("Sign:", t, NTESTS);
 
-  for(i = 0 ; i < NTESTS ; i++)
+  for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
     crypto_sign_verify(sm, CRYPTO_BYTES, sm, CRHBYTES, pk);

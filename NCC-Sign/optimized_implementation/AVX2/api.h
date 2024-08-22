@@ -1,7 +1,7 @@
 #ifndef API_H
 #define API_H
-#include "params.h"
 
+#include "params.h"
 #include "config.h"
 
 int crypto_sign_keypair(unsigned char *pk, unsigned char *sk);

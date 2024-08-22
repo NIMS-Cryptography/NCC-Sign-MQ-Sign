@@ -32,25 +32,21 @@
 
 static inline uint32_t br_dec32le(const unsigned char *src)
 {
-    return (uint32_t)src[0]
-           | ((uint32_t)src[1] << 8)
-           | ((uint32_t)src[2] << 16)
-           | ((uint32_t)src[3] << 24);
+    return (uint32_t)src[0] | ((uint32_t)src[1] << 8) | ((uint32_t)src[2] << 16) | ((uint32_t)src[3] << 24);
 }
 
 static void br_range_dec32le(uint32_t *v, size_t num, const unsigned char *src)
 {
     while (num-- > 0)
     {
-        *v ++ = br_dec32le(src);
+        *v++ = br_dec32le(src);
         src += 4;
     }
 }
 
 static inline uint32_t br_swap32(uint32_t x)
 {
-    x = ((x & (uint32_t)0x00FF00FF) << 8)
-        | ((x >> 8) & (uint32_t)0x00FF00FF);
+    x = ((x & (uint32_t)0x00FF00FF) << 8) | ((x >> 8) & (uint32_t)0x00FF00FF);
     return (x << 16) | (x >> 16);
 }
 
@@ -66,7 +62,7 @@ static void br_range_enc32le(unsigned char *dst, const uint32_t *v, size_t num)
 {
     while (num-- > 0)
     {
-        br_enc32le(dst, *v ++);
+        br_enc32le(dst, *v++);
         dst += 4;
     }
 }
@@ -248,18 +244,19 @@ static void br_aes_ct64_bitslice_Sbox(uint64_t *q)
 
 static void br_aes_ct64_ortho(uint64_t *q)
 {
-#define SWAPN(cl, ch, s, x, y)   do \
-    { \
-        uint64_t a, b; \
-        a = (x); \
-        b = (y); \
+#define SWAPN(cl, ch, s, x, y)                                      \
+    do                                                              \
+    {                                                               \
+        uint64_t a, b;                                              \
+        a = (x);                                                    \
+        b = (y);                                                    \
         (x) = (a & (uint64_t)(cl)) | ((b & (uint64_t)(cl)) << (s)); \
         (y) = ((a & (uint64_t)(ch)) >> (s)) | (b & (uint64_t)(ch)); \
     } while (0)
 
-#define SWAP2(x, y)    SWAPN(0x5555555555555555, 0xAAAAAAAAAAAAAAAA,  1, x, y)
-#define SWAP4(x, y)    SWAPN(0x3333333333333333, 0xCCCCCCCCCCCCCCCC,  2, x, y)
-#define SWAP8(x, y)    SWAPN(0x0F0F0F0F0F0F0F0F, 0xF0F0F0F0F0F0F0F0,  4, x, y)
+#define SWAP2(x, y) SWAPN(0x5555555555555555, 0xAAAAAAAAAAAAAAAA, 1, x, y)
+#define SWAP4(x, y) SWAPN(0x3333333333333333, 0xCCCCCCCCCCCCCCCC, 2, x, y)
+#define SWAP8(x, y) SWAPN(0x0F0F0F0F0F0F0F0F, 0xF0F0F0F0F0F0F0F0, 4, x, y)
 
     SWAP2(q[0], q[1]);
     SWAP2(q[2], q[3]);
@@ -328,9 +325,8 @@ static void br_aes_ct64_interleave_out(uint32_t *w, uint64_t q0, uint64_t q1)
 }
 
 static const unsigned char Rcon[] =
-{
-    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
-};
+    {
+        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36};
 
 static uint32_t sub_word(uint32_t x)
 {
@@ -355,23 +351,23 @@ static void br_aes_ct64_keysched(uint64_t *comp_skey, const unsigned char *key, 
     nkf = ((nrounds + 1) << 2);
     br_range_dec32le(skey, (key_len >> 2), key);
     tmp = skey[(key_len >> 2) - 1];
-    for (i = nk, j = 0, k = 0; i < nkf; i ++)
+    for (i = nk, j = 0, k = 0; i < nkf; i++)
     {
         if (j == 0)
-	{
+        {
             tmp = (tmp << 24) | (tmp >> 8);
             tmp = sub_word(tmp) ^ Rcon[k];
         }
-	else if (nk > 6 && j == 4)
-	{
+        else if (nk > 6 && j == 4)
+        {
             tmp = sub_word(tmp);
         }
         tmp ^= skey[i - nk];
         skey[i] = tmp;
-        if (++ j == nk)
-	{
+        if (++j == nk)
+        {
             j = 0;
-            k ++;
+            k++;
         }
     }
 
@@ -388,15 +384,9 @@ static void br_aes_ct64_keysched(uint64_t *comp_skey, const unsigned char *key, 
         q[7] = q[4];
         br_aes_ct64_ortho(q);
         comp_skey[j + 0] =
-            (q[0] & (uint64_t)0x1111111111111111)
-            | (q[1] & (uint64_t)0x2222222222222222)
-            | (q[2] & (uint64_t)0x4444444444444444)
-            | (q[3] & (uint64_t)0x8888888888888888);
+            (q[0] & (uint64_t)0x1111111111111111) | (q[1] & (uint64_t)0x2222222222222222) | (q[2] & (uint64_t)0x4444444444444444) | (q[3] & (uint64_t)0x8888888888888888);
         comp_skey[j + 1] =
-            (q[4] & (uint64_t)0x1111111111111111)
-            | (q[5] & (uint64_t)0x2222222222222222)
-            | (q[6] & (uint64_t)0x4444444444444444)
-            | (q[7] & (uint64_t)0x8888888888888888);
+            (q[4] & (uint64_t)0x1111111111111111) | (q[5] & (uint64_t)0x2222222222222222) | (q[6] & (uint64_t)0x4444444444444444) | (q[7] & (uint64_t)0x8888888888888888);
     }
 }
 
@@ -405,7 +395,7 @@ static void br_aes_ct64_skey_expand(uint64_t *skey, const uint64_t *comp_skey, u
     unsigned u, v, n;
 
     n = (nrounds + 1) << 1;
-    for (u = 0, v = 0; u < n; u ++, v += 4)
+    for (u = 0, v = 0; u < n; u++, v += 4)
     {
         uint64_t x0, x1, x2, x3;
 
@@ -440,18 +430,12 @@ static inline void shift_rows(uint64_t *q)
 {
     int i;
 
-    for (i = 0; i < 8; i ++)
+    for (i = 0; i < 8; i++)
     {
         uint64_t x;
 
         x = q[i];
-        q[i] = (x & (uint64_t)0x000000000000FFFF)
-               | ((x & (uint64_t)0x00000000FFF00000) >> 4)
-               | ((x & (uint64_t)0x00000000000F0000) << 12)
-               | ((x & (uint64_t)0x0000FF0000000000) >> 8)
-               | ((x & (uint64_t)0x000000FF00000000) << 8)
-               | ((x & (uint64_t)0xF000000000000000) >> 12)
-               | ((x & (uint64_t)0x0FFF000000000000) << 4);
+        q[i] = (x & (uint64_t)0x000000000000FFFF) | ((x & (uint64_t)0x00000000FFF00000) >> 4) | ((x & (uint64_t)0x00000000000F0000) << 12) | ((x & (uint64_t)0x0000FF0000000000) >> 8) | ((x & (uint64_t)0x000000FF00000000) << 8) | ((x & (uint64_t)0xF000000000000000) >> 12) | ((x & (uint64_t)0x0FFF000000000000) << 4);
     }
 }
 
@@ -524,7 +508,7 @@ static void aes_ecb4x(unsigned char out[64], const uint32_t ivw[16], const uint6
     add_round_key(q, sk_exp + 8 * nrounds);
 
     br_aes_ct64_ortho(q);
-    for (i = 0; i < 4; i ++)
+    for (i = 0; i < 4; i++)
     {
         br_aes_ct64_interleave_out(w + (i << 2), q[i], q[i + 4]);
     }
@@ -571,11 +555,11 @@ static void aes_ctr(unsigned char *out, size_t outlen, const unsigned char *iv, 
     uint32_t cc = 0;
 
     br_range_dec32le(ivw, 3, iv);
-    memcpy(ivw +  4, ivw, 3 * sizeof(uint32_t));
-    memcpy(ivw +  8, ivw, 3 * sizeof(uint32_t));
+    memcpy(ivw + 4, ivw, 3 * sizeof(uint32_t));
+    memcpy(ivw + 8, ivw, 3 * sizeof(uint32_t));
     memcpy(ivw + 12, ivw, 3 * sizeof(uint32_t));
-    ivw[ 3] = br_swap32(cc);
-    ivw[ 7] = br_swap32(cc + 1);
+    ivw[3] = br_swap32(cc);
+    ivw[7] = br_swap32(cc + 1);
     ivw[11] = br_swap32(cc + 2);
     ivw[15] = br_swap32(cc + 3);
 
@@ -590,7 +574,7 @@ static void aes_ctr(unsigned char *out, size_t outlen, const unsigned char *iv, 
         unsigned char tmp[64];
         aes_ctr4x(tmp, ivw, rkeys, nrounds);
         for (i = 0; i < outlen; i++)
-	{
+        {
             out[i] = tmp[i];
         }
     }
@@ -696,72 +680,71 @@ void aes256_ctx_release(aes256ctx *r)
     free(r->sk_exp);
 }
 
-
 static void br_aes_ct64_ctr_init(uint64_t sk_exp[120], const uint8_t *key)
 {
-	uint64_t skey[30];
+    uint64_t skey[30];
 
-	br_aes_ct64_keysched(skey, key, 32);
-	br_aes_ct64_skey_expand(sk_exp, skey, 14);
+    br_aes_ct64_keysched(skey, key, 32);
+    br_aes_ct64_skey_expand(sk_exp, skey, 14);
 }
 
 static void br_aes_ct64_ctr_run(uint64_t sk_exp[120], const uint8_t *iv, uint32_t cc, uint8_t *data, size_t len)
 {
-	uint32_t ivw[16];
-	size_t i;
+    uint32_t ivw[16];
+    size_t i;
 
-	br_range_dec32le(ivw, 3, iv);
-	memcpy(ivw +  4, ivw, 3 * sizeof(uint32_t));
-	memcpy(ivw +  8, ivw, 3 * sizeof(uint32_t));
-	memcpy(ivw + 12, ivw, 3 * sizeof(uint32_t));
-	ivw[ 3] = br_swap32(cc);
-	ivw[ 7] = br_swap32(cc + 1);
-	ivw[11] = br_swap32(cc + 2);
-	ivw[15] = br_swap32(cc + 3);
+    br_range_dec32le(ivw, 3, iv);
+    memcpy(ivw + 4, ivw, 3 * sizeof(uint32_t));
+    memcpy(ivw + 8, ivw, 3 * sizeof(uint32_t));
+    memcpy(ivw + 12, ivw, 3 * sizeof(uint32_t));
+    ivw[3] = br_swap32(cc);
+    ivw[7] = br_swap32(cc + 1);
+    ivw[11] = br_swap32(cc + 2);
+    ivw[15] = br_swap32(cc + 3);
 
-	while (len > 64)
-	{
-		aes_ctr4x(data, ivw, sk_exp, 14);
-		data += 64;
-		len -= 64;
-	}
-	if(len > 0)
-	{
-		uint8_t tmp[64];
-		aes_ctr4x(tmp, ivw, sk_exp, 14);
-		for(i=0;i<len;i++)
-			data[i] = tmp[i];
-	}
+    while (len > 64)
+    {
+        aes_ctr4x(data, ivw, sk_exp, 14);
+        data += 64;
+        len -= 64;
+    }
+    if (len > 0)
+    {
+        uint8_t tmp[64];
+        aes_ctr4x(tmp, ivw, sk_exp, 14);
+        for (i = 0; i < len; i++)
+            data[i] = tmp[i];
+    }
 }
 
 void aes256ctr_prf(uint8_t *out, size_t outlen, const uint8_t key[32], const uint8_t nonce[12])
 {
-  uint64_t sk_exp[120];
+    uint64_t sk_exp[120];
 
-  br_aes_ct64_ctr_init(sk_exp, key);
-  br_aes_ct64_ctr_run(sk_exp, nonce, 0, out, outlen);
+    br_aes_ct64_ctr_init(sk_exp, key);
+    br_aes_ct64_ctr_run(sk_exp, nonce, 0, out, outlen);
 }
 
 void aes256ctr_init(aes256ctr_ctx *s, const uint8_t key[32], const uint8_t nonce[12])
 {
-  br_aes_ct64_ctr_init(s->sk_exp, key);
+    br_aes_ct64_ctr_init(s->sk_exp, key);
 
-  br_range_dec32le(s->ivw, 3, nonce);
-  memcpy(s->ivw +  4, s->ivw, 3 * sizeof(uint32_t));
-  memcpy(s->ivw +  8, s->ivw, 3 * sizeof(uint32_t));
-  memcpy(s->ivw + 12, s->ivw, 3 * sizeof(uint32_t));
-  s->ivw[ 3] = br_swap32(0);
-  s->ivw[ 7] = br_swap32(1);
-  s->ivw[11] = br_swap32(2);
-  s->ivw[15] = br_swap32(3);
+    br_range_dec32le(s->ivw, 3, nonce);
+    memcpy(s->ivw + 4, s->ivw, 3 * sizeof(uint32_t));
+    memcpy(s->ivw + 8, s->ivw, 3 * sizeof(uint32_t));
+    memcpy(s->ivw + 12, s->ivw, 3 * sizeof(uint32_t));
+    s->ivw[3] = br_swap32(0);
+    s->ivw[7] = br_swap32(1);
+    s->ivw[11] = br_swap32(2);
+    s->ivw[15] = br_swap32(3);
 }
 
 void aes256ctr_squeezeblocks(uint8_t *out, size_t nblocks, aes256ctr_ctx *s)
 {
-  while (nblocks > 0)
-  {
-    aes_ctr4x(out, s->ivw, s->sk_exp, 14);
-    out += 64;
-    nblocks--;
-  }
+    while (nblocks > 0)
+    {
+        aes_ctr4x(out, s->ivw, s->sk_exp, 14);
+        out += 64;
+        nblocks--;
+    }
 }

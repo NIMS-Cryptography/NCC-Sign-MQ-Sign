@@ -5,13 +5,12 @@
 #include "params.h"
 #include "fips202.h"
 
-#if defined(NIMS_USE_AES ) || defined(NIMS_TRI_USE_AES)
+#if defined(NIMS_USE_AES) || defined(NIMS_TRI_USE_AES)
 
 #include "aes.h"
 
 typedef aes256ctr_ctx stream128_state;
 typedef aes256ctr_ctx stream256_state;
-
 
 void NIMS_aes256ctr_init(aes256ctr_ctx *state, const uint8_t key[32], uint64_t nonce);
 
@@ -32,7 +31,6 @@ void NIMS_aes256ctr_init(aes256ctr_ctx *state, const uint8_t key[32], uint64_t n
 
 typedef keccak_state stream128_state;
 typedef keccak_state stream256_state;
-
 
 void NIMS_shake128_stream_init(keccak_state *state, const uint8_t seed[SEEDBYTES], uint16_t nonce);
 

@@ -1,31 +1,29 @@
 CC ?= /usr/bin/cc
 CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
-  -Wshadow -Wvla -Wpointer-arith -O3 -march=native -mtune=native \
-  -mavx2 -mpopcnt -maes -mbmi2
-NISTFLAGS += -Wno-unused-result -O3 -mavx2 -mpopcnt -maes -mbmi2 \
-  -march=native -mtune=native
-SOURCES = sign.c poly.c packing.c reduce.c rounding.c aes.c
+  -Wshadow -Wvla -Wpointer-arith -march=native -mtune=native \
+  -mavx2 -mpopcnt -maes -mbmi2 -O3 -z noexecstack 
+NISTFLAGS += -Wno-unused-result -mavx2 -mpopcnt -maes -mbmi2 \
+  -march=native -mtune=native -O3 -z noexecstack
+SOURCES = sign.c poly.c packing.c reduce.c rounding.c aes.c consts.c ntt1_asm.S ntt3_asm.S ntt5_asm.S poly_base_mul1_asm.S poly_base_mul3_asm.S poly_base_mul5_asm.S invntt1_asm.S invntt3_asm.S invntt5_asm.S
 HEADERS = config.h params.h api.h sign.h packing.h poly.h \
-  reduce.h rounding.h symmetric.h randombytes.h aes.h \
-  crypto_declassify.h
+  reduce.h rounding.h symmetric.h randombytes.h aes.h consts.h align.h
 KECCAK_SOURCES = $(SOURCES) fips202.c symmetric-shake.c
 KECCAK_HEADERS = $(HEADERS) fips202.h
 AES_SOURCES = $(SOURCES) fips202.c symmetric-aes.c
 AES_HEADERS = $(HEADERS) fips202.h
-KECCAK_AVX_SOURCES = Keccak/KeccakP-1600-AVX2.s
-KECCAK_AVX_HEADERS = Keccak/KeccakP-1600-SnP.h
 
 TEST_SOURCES = sign.c poly.c packing.c reduce.c rounding.c aes.c
 TEST_KECCAK_SOURCES = $(TEST_SOURCES) fips202.c symmetric-shake.c
 
 .PHONY: all speed shared clean
+
 all: \
   fixtest \
   test \
   speed \
-  PQCgenKAT_sign1\
-  PQCgenKAT_sign3\
-  PQCgenKAT_sign5\
+  PQCgenKAT_sign1 \
+  PQCgenKAT_sign3 \
+  PQCgenKAT_sign5 \
 
 fixtest: \
   test/test_NIMS1_fix \
@@ -53,6 +51,11 @@ speed: \
   test/test_speed3aes \
   test/test_speed5aes
 
+timecop: \
+  test/test_timecop1 \
+  test/test_timecop3 \
+  test/test_timecop5
+
 shared: \
   libpqcrystals_NIMS1_ref.so \
   libpqcrystals_NIMS3_ref.so \
@@ -63,20 +66,36 @@ shared: \
   libpqcrystals_fips202_ref.so \
   libpqcrystals_aes256ctr_ref.so
 
-test/test_packing1: test/test_packing.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+
+test/test_NIMS1: test/test_NIMS.c randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) 
 
-test/test_packing3: test/test_packing.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS3: test/test_NIMS.c randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) 
 
-test/test_packing5: test/test_packing.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS5: test/test_NIMS.c randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) 
+
+test/test_packing1: test/test_packing.c randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
+	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 \
+	  -o $@ $< randombytes.c $(KECCAK_SOURCES) 
+
+test/test_packing3: test/test_packing.c randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
+	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 \
+	  -o $@ $< randombytes.c $(KECCAK_SOURCES)
+
+test/test_packing5: test/test_packing.c randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
+	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 \
+	  -o $@ $< randombytes.c $(KECCAK_SOURCES)
 
 libpqcrystals_fips202_ref.so: fips202.c fips202.h
 	$(CC) -shared -fPIC $(CFLAGS) -o $@ $<
@@ -108,119 +127,119 @@ libpqcrystals_NIMS5aes_ref.so: $(SOURCES) $(HEADERS) symmetric-aes.c
 	$(CC) -shared -fPIC $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 -DNIMS_TRI_USE_AES \
 	   -o $@ $(SOURCES) symmetric-aes.c
 
-test/test_NIMS1: test/test_NIMS.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
-
-test/test_NIMS3: test/test_NIMS.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
-
-test/test_NIMS5: test/test_NIMS.c randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 \
-	  -o $@ $< randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
-
-test/test_NIMS1aes: test/test_NIMS.c randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS1aes: test/test_NIMS.c randombytes.c $(AES_SOURCES) \
+  $(AES_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 -DNIMS_TRI_USE_AES \
-	  -o $@ $< randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< randombytes.c $(AES_SOURCES) 
 
-test/test_NIMS3aes: test/test_NIMS.c randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS3aes: test/test_NIMS.c randombytes.c $(AES_SOURCES) \
+  $(AES_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 -DNIMS_TRI_USE_AES \
-	  -o $@ $< randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< randombytes.c $(AES_SOURCES) 
 
-test/test_NIMS5aes: test/test_NIMS.c randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS5aes: test/test_NIMS.c randombytes.c $(AES_SOURCES) \
+  $(AES_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 -DNIMS_TRI_USE_AES \
-	  -o $@ $< randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< randombytes.c $(AES_SOURCES) 
 
 test/test_speed1: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 \
 	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  $(KECCAK_SOURCES) 
 
 test/test_speed3: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 \
 	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  $(KECCAK_SOURCES) 
 
 test/test_speed5: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+  test/cpucycles.c test/cpucycles.h randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 \
 	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  $(KECCAK_SOURCES) 
 
 test/test_speed1aes: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES) $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+  test/cpucycles.c test/cpucycles.h randombytes.c $(AES_SOURCES)  $(AES_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 -DNIMS_TRI_USE_AES \
 	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  $(AES_SOURCES) 
 
 test/test_speed3aes: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES) $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+  test/cpucycles.c test/cpucycles.h randombytes.c $(AES_SOURCES)  $(AES_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 -DNIMS_TRI_USE_AES \
 	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  $(AES_SOURCES) 
 
 test/test_speed5aes: test/test_speed.c test/speed_print.c test/speed_print.h \
-  test/cpucycles.c test/cpucycles.h randombytes.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES) $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+  test/cpucycles.c test/cpucycles.h randombytes.c $(AES_SOURCES)  $(AES_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 -DNIMS_TRI_USE_AES \
 	  -o $@ $< test/speed_print.c test/cpucycles.c randombytes.c \
-	  $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  $(AES_SOURCES) 
 
-test/test_NIMS1_fix: test/test_NIMS_fixinput.c rng.c rng.h $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES) \
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS1_fix: test/test_NIMS_fixinput.c rng.c rng.h $(KECCAK_SOURCES)  \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 \
-	  -o $@ $< rng.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(KECCAK_SOURCES) 
 
-test/test_NIMS3_fix: test/test_NIMS_fixinput.c rng.c rng.h $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES) \
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS3_fix: test/test_NIMS_fixinput.c rng.c rng.h $(KECCAK_SOURCES)  \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 \
-	  -o $@ $< rng.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(KECCAK_SOURCES) 
 
-test/test_NIMS5_fix: test/test_NIMS_fixinput.c rng.c rng.h $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES) \
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+test/test_NIMS5_fix: test/test_NIMS_fixinput.c rng.c rng.h $(KECCAK_SOURCES)  \
+  $(KECCAK_HEADERS) 
 	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 \
-	  -o $@ $< rng.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(KECCAK_SOURCES) 
 
-PQCgenKAT_sign1: PQCgenKAT_sign.c rng.c rng.h $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+PQCgenKAT_sign1: PQCgenKAT_sign.c rng.c rng.h $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(NISTFLAGS) -DNIMS_TRI_NTT_MODE=1 \
-	  -o $@ $< rng.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(KECCAK_SOURCES) 
 
-PQCgenKAT_sign3: PQCgenKAT_sign.c rng.c rng.h $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+PQCgenKAT_sign3: PQCgenKAT_sign.c rng.c rng.h $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(NISTFLAGS) -DNIMS_TRI_NTT_MODE=3 \
-	  -o $@ $< rng.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(KECCAK_SOURCES) 
 
-PQCgenKAT_sign5: PQCgenKAT_sign.c rng.c rng.h $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(KECCAK_HEADERS) $(KECCAK_AVX_HEADERS)
+PQCgenKAT_sign5: PQCgenKAT_sign.c rng.c rng.h $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
 	$(CC) $(NISTFLAGS) -DNIMS_TRI_NTT_MODE=5 \
-	  -o $@ $< rng.c $(KECCAK_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(KECCAK_SOURCES) 
 
-PQCgenKAT_sign1aes: PQCgenKAT_sign.c rng.c rng.h $(AES_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+PQCgenKAT_sign1aes: PQCgenKAT_sign.c rng.c rng.h $(AES_SOURCES) \
+  $(AES_HEADERS) 
 	$(CC) $(NISTFLAGS) -DNIMS_TRI_NTT_MODE=1 -DNIMS_TRI_USE_AES \
-	  -o $@ $< rng.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(AES_SOURCES) 
 
-PQCgenKAT_sign3aes: PQCgenKAT_sign.c rng.c rng.h $(AES_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+PQCgenKAT_sign3aes: PQCgenKAT_sign.c rng.c rng.h $(AES_SOURCES) \
+  $(AES_HEADERS) 
 	$(CC) $(NISTFLAGS) -DNIMS_TRI_NTT_MODE=3 -DNIMS_TRI_USE_AES \
-	  -o $@ $< rng.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(AES_SOURCES) 
 
-PQCgenKAT_sign5aes: PQCgenKAT_sign.c rng.c rng.h $(AES_SOURCES) $(KECCAK_AVX_SOURCES)\
-  $(AES_HEADERS) $(KECCAK_AVX_HEADERS)
+PQCgenKAT_sign5aes: PQCgenKAT_sign.c rng.c rng.h $(AES_SOURCES) \
+  $(AES_HEADERS) 
 	$(CC) $(NISTFLAGS) -DNIMS_TRI_NTT_MODE=5 -DNIMS_TRI_USE_AES \
-	  -o $@ $< rng.c $(AES_SOURCES) $(KECCAK_AVX_SOURCES)
+	  -o $@ $< rng.c $(AES_SOURCES) 
+
+test/test_timecop1: test/test_timecop.c randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
+	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=1 \
+	  -o $@ $< randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) 
+
+test/test_timecop3: test/test_timecop.c randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
+	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=3 \
+	  -o $@ $< randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) 
+
+test/test_timecop5: test/test_timecop.c randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS) 
+	$(CC) $(CFLAGS) -DNIMS_TRI_NTT_MODE=5 \
+	  -o $@ $< randombytes.c $(ORIGINAL_POLY) $(KECCAK_SOURCES) 
 
 clean:
 	rm -f *~ test/*~ *.gcno *.gcda *.lcov
@@ -241,6 +260,9 @@ clean:
 	rm -f test/test_speed1
 	rm -f test/test_speed3
 	rm -f test/test_speed5
+	rm -f test/test_timecop1
+	rm -f test/test_timecop3
+	rm -f test/test_timecop5
 	rm -f test/test_speed1aes
 	rm -f test/test_speed3aes
 	rm -f test/test_speed5aes
@@ -256,3 +278,5 @@ clean:
 	rm -f test/test_packing1
 	rm -f test/test_packing3
 	rm -f test/test_packing5
+	rm -f *.rsp
+	rm -f *.req

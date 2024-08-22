@@ -10,12 +10,14 @@
 
 // We've put these states on the heap to make sure ctx_release is used.
 #define PQC_AES256_STATESIZE 120
-typedef struct {
-    uint64_t* sk_exp;
+typedef struct
+{
+    uint64_t *sk_exp;
 } aes256ctx;
 
 #define AES256CTR_BLOCKBYTES 64
-typedef struct {
+typedef struct
+{
     __m128i rkeys[16];
     __m128i n;
 } aes256ctr_ctx;
@@ -32,7 +34,6 @@ void aes256_ctr(unsigned char *out, size_t outlen, const unsigned char *iv, cons
 
 // Frees the context
 void aes256_ctx_release(aes256ctx *r);
-
 
 // AES with AVX implementation
 void aes256ctr_prf(uint8_t *out, size_t outlen, const uint8_t key[32], const uint8_t nonce[12]);

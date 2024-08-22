@@ -32,23 +32,24 @@ make test/test_speed5
 - Bug in the rejection process has been fixed.
 - Applied some suggestions and patches from [Prof. D. J. Bernstein](https://groups.google.com/g/kpqc-bulletin/c/dcpwJ1bU5pQ/m/h-9dAUGpBgAJ).
 - Improved the reference source code structure for better performance.
+- Reimplemented some parts using AVX2 assembly.
 - Released Cortex-M4 optimized version.
 
 Due to the bug fix in t0, the KAT value has changed from before. For the revised KAT, see NCC-Sign/KAT(SHAKE) or NCC-Sign(AES).
 
 ### NCC-Sign Performances
 
-- Measured on Intel Xeon(R) Gold 6234 processor and each value is the median of 10,000 times measure and represents clock cycles.
+- Measured on Intel® Core i7-1360P and each value is the median of 10,000 times measure and represents clock cycles.
 - In case of Cortex-M4, NUCLEO-L4R5ZI used.
 
 | Scheme                    | Algorithm | Lv.1    | Lv.3        | Lv.5      |
 | :-----------------------: | :-------: | ------: | ----------: | --------: |
-| (ref) NCC-Sign-T          | Keygen    | 220,264 | 285,126     | 454,494   |
-| (ref) NCC-Sign-T          | Sign      | 543,128 | 1,044,662   | 1,584,812 |
-| (ref) NCC-Sign-T          | Verify    | 304,956 | 396,368     | 648,302   |
-| (AVX2) NCC-Sign-T         | KeyGen    | 164,184 | 218,772     | 335,440   |
-| (AVX2) NCC-Sign-T         | Sign      | 290,396 | 553,728     | 838,432   |
-| (AVX2) NCC-Sign-T         | Verify    | 158,138 | 200,242     | 340,382   |
+| (ref) NCC-Sign-T          | Keygen    | 127,415 | 162,315     | 259,499   |
+| (ref) NCC-Sign-T          | Sign      | 250,128 | 421,926		| 704,288	|
+| (ref) NCC-Sign-T          | Verify    | 128,538 | 155,346     | 252,686   |
+| (AVX2) NCC-Sign-T         | KeyGen    | 54,902  | 67,432		| 109,402   |
+| (AVX2) NCC-Sign-T         | Sign      | 89,207  | 165,766		| 261,423   |
+| (AVX2) NCC-Sign-T         | Verify    | 65,626  | 79,388		| 128,612   |
 | (Cortex-M4) NCC-Sign-T    | KeyGen    | 1,045k  | 1,359k      | 2,045k    |
 | (Cortex-M4) NCC-Sign-T    | Sign      | 2,775k  | 4,256k      | 6,552k    |
 | (Cortex-M4) NCC-Sign-T    | Verify    | 1,322k  | 1,669k      | 2,568k    |
