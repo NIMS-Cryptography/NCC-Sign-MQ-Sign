@@ -1,15 +1,17 @@
-#include <stdint.h>
-#include "params.h"
 #include "sign.h"
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "fips202.h"
 #include "packing.h"
+#include "params.h"
 #include "poly.h"
 #include "randombytes.h"
-#include "symmetric.h"
-#include "fips202.h"
 #include "stdio.h"
-#include <stdlib.h>
-#include "crypto_declassify.h"
+#include "symmetric.h"
 
+#include "crypto_declassify.h"
 
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 {
@@ -211,7 +213,6 @@ int crypto_sign_verify(const uint8_t *sig,
 
 	ntt(z.coeffs, z.coeffs);
 	poly_base_mul(&w1, &z, &mat);
-
 	poly_shiftl(&t1);
 
 	ntt(t11.coeffs, t1.coeffs);
