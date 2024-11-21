@@ -2,7 +2,6 @@
 #define POLY_H
 
 #include <stdint.h>
-#include <immintrin.h>
 #include "params.h"
 
 typedef struct _poly

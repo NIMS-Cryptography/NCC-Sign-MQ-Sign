@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <immintrin.h>
 #include "../params.h"
 #include "../randombytes.h"
 #include "../poly.h"
