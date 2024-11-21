@@ -39,20 +39,20 @@ Due to the bug fix in t0, the KAT value has changed from before. For the revised
 
 ### NCC-Sign Performances
 
-- Measured on Intel® Core i7-1360P and each value is the median of 10,000 times measure and represents clock cycles.
-- In case of Cortex-M4, NUCLEO-L4R5ZI used.
+- Measured on Intel® Core i7-13700K and each value is the median of 10,000 times measure and represents clock cycles.
+- In case of Cortex-M4, NUCLEO-L4R5ZI (@20 MHz) used and each value is average of 100 times measured.
 
-| Scheme                    | Algorithm | Lv.1    | Lv.3        | Lv.5      |
-| :-----------------------: | :-------: | ------: | ----------: | --------: |
-| (ref) NCC-Sign-T          | Keygen    | 127,415 | 162,315     | 259,499   |
-| (ref) NCC-Sign-T          | Sign      | 250,128 | 421,926		| 704,288	|
-| (ref) NCC-Sign-T          | Verify    | 128,538 | 155,346     | 252,686   |
-| (AVX2) NCC-Sign-T         | KeyGen    | 54,902  | 67,432		| 109,402   |
-| (AVX2) NCC-Sign-T         | Sign      | 89,207  | 165,766		| 261,423   |
-| (AVX2) NCC-Sign-T         | Verify    | 65,626  | 79,388		| 128,612   |
-| (Cortex-M4) NCC-Sign-T    | KeyGen    | 1,045k  | 1,359k      | 2,045k    |
-| (Cortex-M4) NCC-Sign-T    | Sign      | 2,775k  | 4,256k      | 6,552k    |
-| (Cortex-M4) NCC-Sign-T    | Verify    | 1,322k  | 1,669k      | 2,568k    |
+| Scheme                    	| Algorithm | Lv.1    | Lv.3        | Lv.5      | Lv.5-prime	|
+| :---------------------------:	| :-------: | ------: | ----------: | --------: | ------------: |
+| (ref) NCC-Sign-T          	| Keygen    | 127,415 | 162,315     | 259,499   | 177,002		|
+| (ref) NCC-Sign-T          	| Sign      | 250,128 | 421,926		| 704,288	| 936,923		|
+| (ref) NCC-Sign-T          	| Verify    | 128,538 | 155,346     | 252,686   | 211,206		|
+| (AVX2) NCC-Sign-T         	| KeyGen    | 54,902  | 67,432		| 109,402   | 65,892		|
+| (AVX2) NCC-Sign-T         	| Sign      | 89,207  | 165,766		| 261,423   | 261,269		|
+| (AVX2) NCC-Sign-T         	| Verify    | 65,626  | 79,388		| 128,612   | 72,664		|
+| (Cortex-M4 opt) NCC-Sign-T    | KeyGen    | 994k    | 1,294k      | 1,951k    | 1,324k		|
+| (Cortex-M4 opt) NCC-Sign-T    | Sign      | 2,555k  | 3,801k      | 5,834k    | 7,039k		|
+| (Cortex-M4 opt) NCC-Sign-T    | Verify    | 1,234k  | 1,558k      | 2,377k    | 1,685k		|
 
 
 ## MQ-Sign (v2.1)
