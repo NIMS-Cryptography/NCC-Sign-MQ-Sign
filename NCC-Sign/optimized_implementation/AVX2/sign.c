@@ -9,7 +9,6 @@
 #include "stdio.h"
 #include <stdlib.h>
 #include "consts.h"
-#include "crypto_declassify.h"
 
 int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 {
@@ -20,23 +19,24 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 	poly mat_8way;
 	poly s1, s2, t1, t0;
 	poly temp_result, temp_s1;
-	
+
 	randombytes(zeta, SEEDBYTES);
 	randombytes(seedbuf, SEEDBYTES);
 	shake256(seedbuf, 3 * SEEDBYTES, seedbuf, SEEDBYTES);
-	
+
 	xi_1 = seedbuf;
 	xi_2 = seedbuf + SEEDBYTES;
 	key = seedbuf + 2 * SEEDBYTES;
 
-	poly_uniform_avx(&mat_8way,zeta,0);
+	poly_uniform(&mat_8way, zeta, 0);
 	poly_uniform_eta(&s1, xi_1, 0);
 	poly_uniform_eta(&s2, xi_2, 0);
-	
-	ntt_avx_asm(&temp_s1,&s1);
-	poly_base_mul_avx_asm(&temp_result,&temp_s1, &mat_8way);
-	invntt_avx_asm( &t1,&temp_result);
 
+	ntt_avx_asm(&temp_s1, &s1);
+	poly_base_mul_avx_asm(&temp_result, &temp_s1, &mat_8way);
+	invntt_avx_asm(&t1, &temp_result);
+
+	poly_caddq(&t1);
 	poly_add(&t1, &t1, &s2);
 	poly_caddq(&t1);
 	poly_power2round(&t1, &t0, &t1);
@@ -50,10 +50,10 @@ int crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
 }
 
 int crypto_sign_signature(uint8_t *sig,
-                        	size_t *siglen,
-                        	const uint8_t *m,
-                        	size_t mlen,
-                        	const uint8_t *sk)
+						  size_t *siglen,
+						  const uint8_t *m,
+						  size_t mlen,
+						  const uint8_t *sk)
 {
 	unsigned int n;
 	uint8_t seedbuf[3 * SEEDBYTES + 2 * CRHBYTES];
@@ -61,7 +61,6 @@ int crypto_sign_signature(uint8_t *sig,
 	uint16_t nonce = 0;
 	poly s1, y, z, t0, s2, w1, w0, h, cp, mat_8way,temp_result;
 	keccak_state state;
-	int rejcond;
 	uint8_t neg_start = 0;
 	uint16_t sparse[TAU] = {0};
 	zeta = seedbuf;
@@ -83,7 +82,7 @@ int crypto_sign_signature(uint8_t *sig,
 #else
 	shake256(rho, CRHBYTES, key, SEEDBYTES + CRHBYTES);
 #endif
-	poly_uniform_avx(&mat_8way,zeta,0);
+	poly_uniform(&mat_8way,zeta,0);
 
 rej:
 	poly_uniform_gamma1(&y, rho, nonce++);
@@ -109,33 +108,17 @@ rej:
 	poly_mult_add(&h, &s2, sparse, neg_start);
 	poly_sub(&w0, &w0, &h);
   	poly_reduce(&w0);
-	rejcond = poly_chknorm(&w0, GAMMA2 - BETA);	// patch
-	crypto_declassify(&rejcond,sizeof rejcond);
-	if (rejcond)
-	{
-		goto rej;
-	}
+	if(poly_chknorm(&w0, GAMMA2 - BETA))	goto rej;
 
 	poly_mult_add(&z, &s1, sparse, neg_start);
 	poly_add(&z, &z, &y);
   	poly_reduce(&z);
-	rejcond = poly_chknorm(&z, GAMMA1 - BETA);	// patch
-	crypto_declassify(&rejcond,sizeof rejcond);
 
-	if (rejcond)
-	{
-		goto rej;
-	}
-	
+	if (poly_chknorm(&z, GAMMA1 - BETA))	goto rej;
 	poly_mult_add(&h, &t0, sparse, neg_start);
   	poly_reduce(&h);
-	rejcond = poly_chknorm(&h, GAMMA2);		// patch
-	crypto_declassify(&rejcond,sizeof rejcond);
 
-	if (rejcond)
-	{
-		goto rej;
-	}
+	if (poly_chknorm(&h, GAMMA2))	goto rej;
 
 	poly_add(&w0, &w0, &h);
 	n = poly_make_hint(&h, &w0, &w1);
@@ -147,10 +130,10 @@ rej:
 }
 
 int crypto_sign(uint8_t *sm,
-              	size_t *smlen,
-              	const uint8_t *m,
-              	size_t mlen,
-              	const uint8_t *sk)
+				size_t *smlen,
+				const uint8_t *m,
+				size_t mlen,
+				const uint8_t *sk)
 {
 	size_t i;
 
@@ -160,12 +143,11 @@ int crypto_sign(uint8_t *sm,
 	return 0;
 }
 
-
 int crypto_sign_verify(const uint8_t *sig,
-                       size_t siglen,
-                       const uint8_t *m,
-                       size_t mlen,
-                       const uint8_t *pk)
+					   size_t siglen,
+					   const uint8_t *m,
+					   size_t mlen,
+					   const uint8_t *pk)
 {
 	unsigned int i;
 	uint8_t buf[POLYW1_PACKEDBYTES];
@@ -175,38 +157,39 @@ int crypto_sign_verify(const uint8_t *sig,
 	uint8_t c2[SEEDBYTES];
 
 	poly cp, z, t1, w1, h;
-	poly mat_8way, temp_w1,temp_t1,temp_result;
+	poly mat_8way, temp_w1, temp_t1, temp_result;
 	keccak_state state;
 
 	if (siglen != CRYPTO_BYTES)	return -1;
 	unpack_pk(zeta, &t1, pk);
+
 	if (unpack_sig(c, &z, &h, sig))	return -1;
+
 	if (poly_chknorm(&z, GAMMA1 - BETA))	return -1;
-	
+
 	shake256(mu, SEEDBYTES, pk, CRYPTO_PUBLICKEYBYTES);
 	shake256_init(&state);
 	shake256_absorb(&state, mu, SEEDBYTES);
 	shake256_absorb(&state, m, mlen);
 	shake256_finalize(&state);
 	shake256_squeeze(mu, CRHBYTES, &state);
-
 	poly_challenge(&cp, c);
-	poly_uniform_avx(&mat_8way,zeta,0);
+	poly_uniform(&mat_8way, zeta, 0);
 
 	ntt_avx_asm(&z, &z);
-	poly_base_mul_avx_asm(&temp_w1,&z,&mat_8way);
-	
+	poly_base_mul_avx_asm(&temp_w1, &z, &mat_8way);
+
 	ntt_avx_asm(&cp, &cp);
 	poly_shiftl(&t1);
-	ntt_avx_asm(&t1,&t1);
-	poly_base_mul_avx_asm(&temp_t1,&cp,&t1);
+
+	ntt_avx_asm(&t1, &t1);
+	poly_base_mul_avx_asm(&temp_t1, &cp, &t1);
 
 	poly_sub(&temp_result, &temp_w1, &temp_t1);
-	invntt_avx_asm(&w1,&temp_result);
+	invntt_avx_asm(&w1, &temp_result);
 
 	poly_caddq(&w1);
-	poly_use_hint(&w1, &w1, &h);	
-
+	poly_use_hint(&w1, &w1, &h);
 	polyw1_pack(buf, &w1);
 	shake256_init(&state);
 	shake256_absorb(&state, mu, CRHBYTES);
@@ -220,22 +203,22 @@ int crypto_sign_verify(const uint8_t *sig,
 }
 
 int crypto_sign_open(uint8_t *m,
-                     size_t *mlen,
-                     const uint8_t *sm,
-                     size_t smlen,
-                     const uint8_t *pk)
+					 size_t *mlen,
+					 const uint8_t *sm,
+					 size_t smlen,
+					 const uint8_t *pk)
 {
 	size_t i;
 
-	if(smlen < CRYPTO_BYTES)
+	if (smlen < CRYPTO_BYTES)
 		goto badsig;
 
 	*mlen = smlen - CRYPTO_BYTES;
-	if(crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk))
+	if (crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk))
 		goto badsig;
 	else
 	{
-		for(i = 0; i < *mlen ; i++)
+		for (i = 0; i < *mlen; i++)
 			m[i] = sm[CRYPTO_BYTES + i];
 		return 0;
 	}
@@ -243,7 +226,7 @@ int crypto_sign_open(uint8_t *m,
 badsig:
 	/* Signature verification failed */
 	*mlen = -1;
-	for(i = 0 ; i < smlen ; i++)
+	for (i = 0; i < smlen; i++)
 		m[i] = 0;
 
 	return -1;

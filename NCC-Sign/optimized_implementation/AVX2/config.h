@@ -11,6 +11,8 @@
 #define CRYPTO_ALGNAME "NCC-Sign3"
 #elif NIMS_TRI_NTT_MODE == 5
 #define CRYPTO_ALGNAME "NCC-Sign5"
+#elif NIMS_TRI_NTT_MODE == 55
+#define CRYPTO_ALGNAME "NCC-Sign5prime"
 #endif
 
 #endif

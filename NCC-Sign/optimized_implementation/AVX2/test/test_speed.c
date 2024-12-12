@@ -5,7 +5,6 @@
 #include "cpucycles.h"
 #include "speed_print.h"
 #include "stdio.h"
-#include "time.h"
 
 #define NTESTS 10000
 
@@ -22,14 +21,13 @@ int main(void)
   poly mat;
   poly eta, gamma, a, b, c;
   uint8_t seed[3 * SEEDBYTES];
-  srand(time(NULL));
 
   t_overhead = 19;
 
   for (i = 0; i < NTESTS; i++)
   {
     t[i] = cpucycles();
-    poly_uniform_avx(&mat, seed, 0);
+    poly_uniform(&mat, seed, 0);
   }
   print_results("nims", t, NTESTS);
 

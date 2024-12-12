@@ -10,55 +10,59 @@
 #include "sign.h"
 #include <stdio.h>
 
-#include "crypto_declassify.h"
-
 extern void ntt1_asm(__m256i *a, const __m256i *qdata);
 extern void ntt3_asm(__m256i *a, const __m256i *qdata);
 extern void ntt5_asm(__m256i *a, const __m256i *qdata);
+extern void ntt5prime_asm(__m256i *a, const __m256i *qdata);
 extern void poly_base_mul1_asm(__m256i *c, const __m256i *a, const __m256i *b, const __m256i *qdata);
 extern void poly_base_mul3_asm(__m256i *c, const __m256i *a, const __m256i *b, const __m256i *qdata);
 extern void poly_base_mul5_asm(__m256i *c, const __m256i *a, const __m256i *b, const __m256i *qdata);
+extern void poly_base_mul5prime_asm(__m256i *c, const __m256i *a, const __m256i *b, const __m256i *qdata);
 extern void invntt1_asm(__m256i *a, const __m256i *qdata);
 extern void invntt3_asm(__m256i *a, const __m256i *qdata);
 extern void invntt5_asm(__m256i *a, const __m256i *qdata);
+extern void invntt5prime_asm(__m256i *a, const __m256i *qdata);
 
 void ntt_avx_asm(poly *Out, poly *A)
 {
-  if (Out != A)
-    memcpy(Out, A, sizeof(int32_t) * N);
-
+    if(Out!=A) memcpy(Out,A,sizeof(int32_t)*N);
+    
 #if NIMS_TRI_NTT_MODE == 1
-  ntt1_asm(Out->vec, qdata.vec);
+    ntt1_asm(Out->vec, qdata.vec);
 #elif NIMS_TRI_NTT_MODE == 3
-  ntt3_asm(Out->vec, qdata.vec);
+    ntt3_asm(Out->vec, qdata.vec);
 #elif NIMS_TRI_NTT_MODE == 5
-  ntt5_asm(Out->vec, qdata.vec);
+    ntt5_asm(Out->vec, qdata.vec);    
+#elif NIMS_TRI_NTT_MODE == 55
+    ntt5prime_asm(Out->vec, qdata.vec);    
 #endif
 }
 
 void poly_base_mul_avx_asm(poly *c, poly *a, poly *b)
 {
 #if NIMS_TRI_NTT_MODE == 1
-  poly_base_mul1_asm(c->vec, a->vec, b->vec, qdata.vec);
+    poly_base_mul1_asm(c->vec, a->vec, b->vec, qdata.vec);
 #elif NIMS_TRI_NTT_MODE == 3
-  poly_base_mul3_asm(c->vec, a->vec, b->vec, qdata.vec);
+    poly_base_mul3_asm(c->vec, a->vec, b->vec, qdata.vec);
 #elif NIMS_TRI_NTT_MODE == 5
-  poly_base_mul5_asm(c->vec, a->vec, b->vec, qdata.vec);
-
+    poly_base_mul5_asm(c->vec, a->vec, b->vec, qdata.vec);
+#elif NIMS_TRI_NTT_MODE == 55
+    poly_base_mul5prime_asm(c->vec, a->vec, b->vec, qdata.vec);
 #endif
 }
 
 void invntt_avx_asm(poly *Out, poly *A)
 {
-  if (Out != A)
-    memcpy(Out, A, sizeof(int32_t) * N);
-
+    if(Out!=A) memcpy(Out,A,sizeof(int32_t)*N);
+    
 #if NIMS_TRI_NTT_MODE == 1
-  invntt1_asm(Out->vec, qdata.vec);
+    invntt1_asm(Out->vec, qdata.vec);
 #elif NIMS_TRI_NTT_MODE == 3
-  invntt3_asm(Out->vec, qdata.vec);
+    invntt3_asm(Out->vec, qdata.vec);
 #elif NIMS_TRI_NTT_MODE == 5
-  invntt5_asm(Out->vec, qdata.vec);
+    invntt5_asm(Out->vec, qdata.vec);
+#elif NIMS_TRI_NTT_MODE == 55
+    invntt5prime_asm(Out->vec, qdata.vec);  
 #endif
 }
 const uint8_t idxlut[256][8] = {
@@ -442,8 +446,12 @@ int poly_chknorm(poly *a, int32_t B)
   return r;
 }
 
-#define POLY_UNIFORM_NBLOCKS ((6 * N + STREAM128_BLOCKBYTES - 1) / STREAM128_BLOCKBYTES)
-#define POLY_UNIFORM_BUFLEN (POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES)
+#if N == 2048
+#define POLY_UNIFORM_NBLOCKS ((3*N + STREAM128_BLOCKBYTES - 1)/STREAM128_BLOCKBYTES)
+#else
+#define POLY_UNIFORM_NBLOCKS ((6*N + STREAM128_BLOCKBYTES - 1)/STREAM128_BLOCKBYTES)
+#endif
+#define POLY_UNIFORM_BUFLEN (POLY_UNIFORM_NBLOCKS*STREAM128_BLOCKBYTES)
 
 static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf, unsigned int buflen)
 {
@@ -480,15 +488,15 @@ static unsigned int rej_eta(int32_t *a, unsigned int len, const uint8_t *buf, un
 }
 
 #if N == 1152
-#define POLY_UNIFORM_ETA_NBLOCKS ((3 * 136 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
+#define POLY_UNIFORM_ETA_NBLOCKS ((3* 136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
 #elif N == 1536
-#define POLY_UNIFORM_ETA_NBLOCKS ((4 * 136 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
-#elif N == 2304
-#define POLY_UNIFORM_ETA_NBLOCKS ((6 * 136 + STREAM256_BLOCKBYTES - 1) / STREAM256_BLOCKBYTES)
+#define POLY_UNIFORM_ETA_NBLOCKS ((4* 136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
+#else
+#define POLY_UNIFORM_ETA_NBLOCKS ((6 * 136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
 #endif
-#define POLY_UNIFORM_ETA_BUFLEN (POLY_UNIFORM_ETA_NBLOCKS * STREAM256_BLOCKBYTES)
+#define POLY_UNIFORM_ETA_BUFLEN (POLY_UNIFORM_ETA_NBLOCKS*STREAM256_BLOCKBYTES)
 
-void merge_alternate_m256(__m256i *g1, __m256i *g2, __m256i *result)
+static void merge_alternate_m256(__m256i *g1, __m256i *g2, __m256i *result)
 {
   __m256i g1_low = _mm256_loadu_si256(&g1[0]);
   __m256i g1_high = _mm256_loadu_si256(&g1[1]);
@@ -547,9 +555,8 @@ static unsigned int rej_eta_avx(int32_t *restrict r, const uint8_t buf[POLY_UNIF
     good >>= 8;
     pos += 2;
 
-    if (ctr > N - 8)
-      break;
-    g0 = _mm_bsrli_si128(g0, 8);
+    if(ctr > N - 8) break;
+    g0 = _mm_bsrli_si128(g0,8);
     g1 = _mm_loadl_epi64((__m128i *)&idxlut[good & 0xFF]);
     g1 = _mm_shuffle_epi8(g0, g1);
     f1 = _mm256_cvtepi8_epi32(g1);
@@ -647,7 +654,6 @@ void poly_challenge(poly *c, const uint8_t seed[SEEDBYTES])
 
       b = (uint32_t)buf[pos++] << 4;
       b |= (buf[pos++] & 0xF);
-	  crypto_declassify(&b,sizeof b);		// patch
     } while (b > i);
 
     c->coeffs[i] = c->coeffs[b];
@@ -667,7 +673,6 @@ void poly_challenge(poly *c, const uint8_t seed[SEEDBYTES])
 
       b = (uint32_t)buf[pos++] << 3;
       b |= (buf[pos++] & 0x7);
-	  crypto_declassify(&b,sizeof b);		// patch
     } while (b > i);
 
     c->coeffs[i] = c->coeffs[b];
@@ -677,6 +682,81 @@ void poly_challenge(poly *c, const uint8_t seed[SEEDBYTES])
 #endif
 }
 
+uint8_t convToIdx(uint16_t* res, const uint8_t res_length, const int32_t* op,
+    const size_t op_length) {
+    uint8_t index = 0, b = 0;
+    uint8_t index_arr[2] = { 0, res_length - 1 }; // 0 for positive, 1 for
+    // negative
+    for (size_t i = 0; i < op_length; ++i) {
+
+
+        index = ((op[i] & 0x80000000) >> 31) & 0x00000001;
+        b = (~(uint64_t)(uint32_t)op[i] + 1) >> 63;
+        res[index_arr[index]] ^= (~b + 1) & (res[index_arr[index]] ^ i);
+        index_arr[index] += op[i];
+    }
+
+    return index_arr[0];
+}
+
+
+static void poly_sparse_add(poly_sparse *res, const poly *op1, const uint16_t deg)
+{
+  __m256i v_res, v_op1;
+  for (size_t i = 0; i < N / 8; ++i)
+  {
+    v_res = _mm256_loadu_si256((__m256i *)&res->coeffs[deg + 8 * i]);
+    v_op1 = _mm256_loadu_si256((__m256i *)&op1->coeffs[8 * i]);
+    v_res = _mm256_add_epi32(v_res, v_op1);
+    _mm256_storeu_si256((__m256i *)&res->coeffs[deg + 8 * i], v_res);
+  }
+}
+
+static void poly_sparse_sub(poly_sparse *res, const poly *op1, const uint16_t deg)
+{
+  __m256i v_res, v_op1;
+  for (size_t i = 0; i < N / 8; ++i)
+  {
+    v_res = _mm256_loadu_si256((__m256i *)&res->coeffs[deg + 8 * i]);
+    v_op1 = _mm256_loadu_si256((__m256i *)&op1->coeffs[8 * i]);
+    v_res = _mm256_sub_epi32(v_res, v_op1);
+    _mm256_storeu_si256((__m256i *)&res->coeffs[deg + 8 * i], v_res);
+  }
+}
+
+static void poly_sparse_reduce(poly *res, poly_sparse *c)
+{
+  uint32_t i;
+  for (i = N + (N >> 1) - 1; i < 2 * N - 1; i++)
+  {
+    c->coeffs[i - (N >> 1)] = (c->coeffs[i - (N >> 1)] + c->coeffs[i]);
+    c->coeffs[i - N] = (c->coeffs[i - N] - c->coeffs[i]);
+  }
+  for (i = N; i < N + (N >> 1) - 1; i++)
+  {
+    c->coeffs[i - (N >> 1)] = (c->coeffs[i - (N >> 1)] + c->coeffs[i]);
+    c->coeffs[i - N] = (c->coeffs[i - N] - c->coeffs[i]);
+  }
+
+  for (i = 0; i < N / 8; i++)
+  {
+    res->vec[i] = c->vec[i];
+  }
+}
+void poly_mult_add(poly *res, const poly *op1, const uint16_t *op2, const  uint8_t neg_start) {
+    poly_sparse temp = {0};
+
+    for (size_t j = 0; j < neg_start; ++j) {
+        poly_sparse_add(&temp, op1, op2[j]);
+    }
+
+    for (size_t j = neg_start; j < TAU; ++j) {
+        poly_sparse_sub(&temp, op1, op2[j]);
+    }
+    
+    poly_sparse_reduce(res, &temp);
+    
+}
 void poly_reduce(poly *a)
 {
   unsigned int i;
@@ -696,45 +776,69 @@ void poly_reduce(poly *a)
   }
 }
 
-static unsigned int rej_uniform_avx(int32_t *restrict r, const uint8_t buf[POLY_UNIFORM_BUFLEN + 8])
+static unsigned int rej_uniform_avx(int32_t * restrict r, const uint8_t buf[POLY_UNIFORM_BUFLEN+8])
 {
   unsigned int ctr, pos;
   uint32_t good;
   __m256i d, tmp;
   const __m256i bound = _mm256_set1_epi32(Q);
-  const __m256i masked = _mm256_set1_epi32(0xFFFFFF);
-  const __m256i idx8 = _mm256_set_epi8(-1, 15, 14, 13, -1, 12, 11, 10,
-                                       -1, 9, 8, 7, -1, 6, 5, 4,
-                                       -1, 11, 10, 9, -1, 8, 7, 6,
-                                       -1, 5, 4, 3, -1, 2, 1, 0);
+  #if NIMS_TRI_NTT_MODE == 55
+	const __m256i local_mask  = _mm256_set1_epi32(0x7FFFFF);
+  #else
+	const __m256i local_mask  = _mm256_set1_epi32(0xFFFFFF);
+  #endif
+  
+  const __m256i idx8  = _mm256_set_epi8(-1,15,14,13,-1,12,11,10,
+                                        -1, 9, 8, 7,-1, 6, 5, 4,
+                                        -1,11,10, 9,-1, 8, 7, 6,
+                                        -1, 5, 4, 3,-1, 2, 1, 0);
+
   ctr = pos = 0;
-  while (pos <= POLY_UNIFORM_BUFLEN - 24)
-  {
+  while(pos <= POLY_UNIFORM_BUFLEN - 24) {
     d = _mm256_loadu_si256((__m256i *)&buf[pos]);
     d = _mm256_permute4x64_epi64(d, 0x94);
     d = _mm256_shuffle_epi8(d, idx8);
-    d = _mm256_and_si256(d, masked);
+    d = _mm256_and_si256(d, local_mask);
     pos += 24;
 
     tmp = _mm256_sub_epi32(d, bound);
     good = _mm256_movemask_ps((__m256)tmp);
     tmp = _mm256_cvtepu8_epi32(_mm_loadl_epi64((__m128i *)&idxlut[good]));
     d = _mm256_permutevar8x32_epi32(d, tmp);
+
     _mm256_storeu_si256((__m256i *)&r[ctr], d);
     ctr += _mm_popcnt_u32(good);
-  }
-  uint32_t t;
-  while (ctr < (N) && pos <= POLY_UNIFORM_BUFLEN - 3)
-  {
-    t = buf[pos++];
-    t |= (uint32_t)buf[pos++] << 8;
-    t |= (uint32_t)buf[pos++] << 16;
-    t &= 0xFFFFFF;
 
-    if (t < Q)
-      r[ctr++] = t;
+    if(ctr > N - 8) break;
   }
-  return ctr;
+
+  uint32_t t;
+
+#if NIMS_TRI_NTT_MODE == 55
+	while(ctr < N && pos <= POLY_UNIFORM_BUFLEN - 3) {
+		t  = buf[pos++];
+		t |= (uint32_t)buf[pos++] << 8;
+		t |= (uint32_t)buf[pos++] << 16;
+		t &= 0x7FFFFF;
+
+		if(t < Q)
+		r[ctr++] = t;
+	}
+
+	return ctr;
+#else
+	while(ctr < (N) && pos <= POLY_UNIFORM_BUFLEN - 3) 
+	{
+		t  = buf[pos++];
+		t |= (uint32_t)buf[pos++] << 8;
+		t |= (uint32_t)buf[pos++] << 16;
+		t &= 0xFFFFFF;
+
+		if(t < Q)
+		r[ctr++] = t;
+	}
+  	return ctr;
+#endif
 }
 
 static unsigned int rej_uniform(int32_t *a,
@@ -759,9 +863,9 @@ static unsigned int rej_uniform(int32_t *a,
 
   return ctr;
 }
-void poly_uniform_avx(poly *a, const uint8_t seed[SEEDBYTES], uint16_t nonce)
+void poly_uniform(poly *a, const uint8_t seed[SEEDBYTES], uint16_t nonce)
 {
-  unsigned int ctr; //, index;
+  unsigned int ctr; 
   uint8_t buf[POLY_UNIFORM_NBLOCKS * STREAM128_BLOCKBYTES + 2] = {0};
   stream128_state state;
   stream128_init(&state, seed, nonce);
@@ -774,80 +878,4 @@ void poly_uniform_avx(poly *a, const uint8_t seed[SEEDBYTES], uint16_t nonce)
     stream128_squeezeblocks(buf, 1, &state);
     ctr += rej_uniform(a->coeffs + ctr, N - ctr, buf, STREAM128_BLOCKBYTES);
   }
-}
-
-uint8_t convToIdx(uint16_t *res, const uint8_t res_length, const int32_t *op,
-                  const size_t op_length)
-{
-  uint8_t index = 0, b = 0;
-  uint8_t index_arr[2] = {0, res_length - 1}; // 0 for positive, 1 for
-  for (size_t i = 0; i < op_length; ++i)
-  {
-    index = ((op[i] & 0x80000000) >> 31) & 0x00000001;
-    b = (~(uint64_t)(uint32_t)op[i] + 1) >> 63;
-    res[index_arr[index]] ^= (~b + 1) & (res[index_arr[index]] ^ i);
-    index_arr[index] += op[i];
-  }
-  return index_arr[0];
-}
-
-void poly_sparse_add(poly_sparse *res, const poly *op1, const uint16_t deg)
-{
-  __m256i v_res, v_op1;
-  for (size_t i = 0; i < N / 8; ++i)
-  {
-    v_res = _mm256_loadu_si256((__m256i *)&res->coeffs[deg + 8 * i]);
-    v_op1 = _mm256_loadu_si256((__m256i *)&op1->coeffs[8 * i]);
-    v_res = _mm256_add_epi32(v_res, v_op1);
-    _mm256_storeu_si256((__m256i *)&res->coeffs[deg + 8 * i], v_res);
-  }
-}
-
-void poly_sparse_sub(poly_sparse *res, const poly *op1, const uint16_t deg)
-{
-  __m256i v_res, v_op1;
-  for (size_t i = 0; i < N / 8; ++i)
-  {
-    v_res = _mm256_loadu_si256((__m256i *)&res->coeffs[deg + 8 * i]);
-    v_op1 = _mm256_loadu_si256((__m256i *)&op1->coeffs[8 * i]);
-    v_res = _mm256_sub_epi32(v_res, v_op1);
-    _mm256_storeu_si256((__m256i *)&res->coeffs[deg + 8 * i], v_res);
-  }
-}
-
-void poly_sparse_reduce(poly *res, poly_sparse *c)
-{
-  uint32_t i;
-  for (i = N + (N >> 1) - 1; i < 2 * N - 1; i++)
-  {
-    c->coeffs[i - (N >> 1)] = (c->coeffs[i - (N >> 1)] + c->coeffs[i]);
-    c->coeffs[i - N] = (c->coeffs[i - N] - c->coeffs[i]);
-  }
-  for (i = N; i < N + (N >> 1) - 1; i++)
-  {
-    c->coeffs[i - (N >> 1)] = (c->coeffs[i - (N >> 1)] + c->coeffs[i]);
-    c->coeffs[i - N] = (c->coeffs[i - N] - c->coeffs[i]);
-  }
-
-  for (i = 0; i < N / 8; i++)
-  {
-    __m256i c_vec = _mm256_loadu_si256((__m256i *)&c->coeffs[8 * i]);
-    _mm256_storeu_si256((__m256i *)&res->coeffs[8 * i], c_vec);
-  }
-}
-void poly_mult_add(poly *res, const poly *op1, const uint16_t *op2, const uint8_t neg_start)
-{
-  poly_sparse temp = {0};
-
-  for (size_t j = 0; j < neg_start; ++j)
-  {
-    poly_sparse_add(&temp, op1, op2[j]);
-  }
-
-  for (size_t j = neg_start; j < TAU; ++j)
-  {
-    poly_sparse_sub(&temp, op1, op2[j]);
-  }
-
-  poly_sparse_reduce(res, &temp);
 }

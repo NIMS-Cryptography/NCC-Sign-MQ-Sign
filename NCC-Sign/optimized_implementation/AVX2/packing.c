@@ -5,19 +5,9 @@
 
 void polyeta_pack(uint8_t r[POLYETA_PACKEDBYTES], const poly *restrict a)
 {
-	unsigned int i, nbytes;
+	unsigned int i;
 	uint8_t t[8];
-
-#if N == 1152
-	nbytes = 144;
-#elif N == 1536
-	nbytes = 192;
-#elif N == 2304
-	nbytes = 288;
-#endif
-
-	for (i = 0; i < nbytes; i++)
-	{
+	for (i = 0; i < N / 8; ++i) {
 		t[0] = ETA - a->coeffs[8 * i + 0];
 		t[1] = ETA - a->coeffs[8 * i + 1];
 		t[2] = ETA - a->coeffs[8 * i + 2];
@@ -35,18 +25,8 @@ void polyeta_pack(uint8_t r[POLYETA_PACKEDBYTES], const poly *restrict a)
 
 void polyeta_unpack(poly *restrict r, const uint8_t a[POLYETA_PACKEDBYTES])
 {
-	unsigned int i, nbytes;
-
-#if N == 1152
-	nbytes = 144;
-#elif N == 1536
-	nbytes = 192;
-#elif N == 2304
-	nbytes = 288;
-#endif
-
-	for (i = 0; i < nbytes; i++)
-	{
+	unsigned int i;
+	for (i = 0; i < N / 8; ++i) {
 		r->coeffs[8 * i + 0] = (a[3 * i + 0] >> 0) & 7;
 		r->coeffs[8 * i + 1] = (a[3 * i + 0] >> 3) & 7;
 		r->coeffs[8 * i + 2] = ((a[3 * i + 0] >> 6) | (a[3 * i + 1] << 2)) & 7;
@@ -151,6 +131,29 @@ void polyt0_pack(uint8_t r[POLYT0_PACKEDBYTES], const poly *restrict a)
 		r[13 * i + 11] = (t[6] >> 10) | (t[7] << 3);
 		r[13 * i + 12] = (t[7] >> 5);
 	}
+#elif N == 2048
+	for (i = 0; i < N / 8; ++i) {
+		t[0] = (1 << (D - 1)) - a->coeffs[8 * i + 0];
+		t[1] = (1 << (D - 1)) - a->coeffs[8 * i + 1];
+		t[2] = (1 << (D - 1)) - a->coeffs[8 * i + 2];
+		t[3] = (1 << (D - 1)) - a->coeffs[8 * i + 3];
+		t[4] = (1 << (D - 1)) - a->coeffs[8 * i + 4];
+		t[5] = (1 << (D - 1)) - a->coeffs[8 * i + 5];
+		t[6] = (1 << (D - 1)) - a->coeffs[8 * i + 6];
+		t[7] = (1 << (D - 1)) - a->coeffs[8 * i + 7];
+
+		r[11 * i + 0] = (t[0] >> 0);
+		r[11 * i + 1] = (t[0] >> 8) | (t[1] << 3);
+		r[11 * i + 2] = (t[1] >> 5) | (t[2] << 6);
+		r[11 * i + 3] = (t[2] >> 2);
+		r[11 * i + 4] = (t[2] >> 10) | (t[3] << 1);
+		r[11 * i + 5] = (t[3] >> 7) | (t[4] << 4);
+		r[11 * i + 6] = (t[4] >> 4) | (t[5] << 7);
+		r[11 * i + 7] = (t[5] >> 1);
+		r[11 * i + 8] = (t[5] >> 9) | (t[6] << 2);
+		r[11 * i + 9] = (t[6] >> 6) | (t[7] << 5);
+		r[11 * i + 10] = (t[7] >> 3);
+	}
 #else
 	for (i = 0; i < N / 2; i++)
 	{
@@ -188,6 +191,51 @@ void polyt0_unpack(poly *restrict r, const uint8_t a[POLYT0_PACKEDBYTES])
 		r->coeffs[8 * i + 5] = (1 << 12) - r->coeffs[8 * i + 5];
 		r->coeffs[8 * i + 6] = (1 << 12) - r->coeffs[8 * i + 6];
 		r->coeffs[8 * i + 7] = (1 << 12) - r->coeffs[8 * i + 7];
+	}
+#elif N == 2048
+	for (i = 0; i < N / 8; ++i) {
+		r->coeffs[8 * i + 0] = a[11 * i + 0];
+		r->coeffs[8 * i + 0] |= (uint32_t)a[11 * i + 1] << 8;
+		r->coeffs[8 * i + 0] &= 0x7FF;
+
+		r->coeffs[8 * i + 1] = a[11 * i + 1] >> 3;
+		r->coeffs[8 * i + 1] |= (uint32_t)a[11 * i + 2] << 5;
+		r->coeffs[8 * i + 1] &= 0x7FF;
+
+		r->coeffs[8 * i + 2] = a[11 * i + 2] >> 6;
+		r->coeffs[8 * i + 2] |= (uint32_t)a[11 * i + 3] << 2;
+		r->coeffs[8 * i + 2] |= (uint32_t)a[11 * i + 4] << 10;
+		r->coeffs[8 * i + 2] &= 0x7FF;
+
+		r->coeffs[8 * i + 3] = a[11 * i + 4] >> 1;
+		r->coeffs[8 * i + 3] |= (uint32_t)a[11 * i + 5] << 7;
+		r->coeffs[8 * i + 3] &= 0x7FF;
+
+		r->coeffs[8 * i + 4] = a[11 * i + 5] >> 4;
+		r->coeffs[8 * i + 4] |= (uint32_t)a[11 * i + 6] << 4;
+		r->coeffs[8 * i + 4] &= 0x7FF;
+
+		r->coeffs[8 * i + 5] = a[11 * i + 6] >> 7;
+		r->coeffs[8 * i + 5] |= (uint32_t)a[11 * i + 7] << 1;
+		r->coeffs[8 * i + 5] |= (uint32_t)a[11 * i + 8] << 9;
+		r->coeffs[8 * i + 5] &= 0x7FF;
+
+		r->coeffs[8 * i + 6] = a[11 * i + 8] >> 2;
+		r->coeffs[8 * i + 6] |= (uint32_t)a[11 * i + 9] << 6;
+		r->coeffs[8 * i + 6] &= 0x7FF;
+
+		r->coeffs[8 * i + 7] = a[11 * i + 9] >> 5;
+		r->coeffs[8 * i + 7] |= (uint32_t)a[11 * i + 10] << 3;
+		r->coeffs[8 * i + 7] &= 0x7FF;
+
+		r->coeffs[8 * i + 0] = (1 << (D - 1)) - r->coeffs[8 * i + 0];
+		r->coeffs[8 * i + 1] = (1 << (D - 1)) - r->coeffs[8 * i + 1];
+		r->coeffs[8 * i + 2] = (1 << (D - 1)) - r->coeffs[8 * i + 2];
+		r->coeffs[8 * i + 3] = (1 << (D - 1)) - r->coeffs[8 * i + 3];
+		r->coeffs[8 * i + 4] = (1 << (D - 1)) - r->coeffs[8 * i + 4];
+		r->coeffs[8 * i + 5] = (1 << (D - 1)) - r->coeffs[8 * i + 5];
+		r->coeffs[8 * i + 6] = (1 << (D - 1)) - r->coeffs[8 * i + 6];
+		r->coeffs[8 * i + 7] = (1 << (D - 1)) - r->coeffs[8 * i + 7];
 	}
 #else
 	for (i = 0; i < N / 2; i++)

@@ -10,7 +10,7 @@
 #define _8XF2           48
 #define _8XF2_QINV      56
 #define _ZETAS_QINV     64
-
+#define _8idx           64+3328+3328+3327+3327
 #if NIMS_TRI_NTT_MODE == 1
 #define _ZETAS          64+2176 // 2176 = 128 + 2048
 #define _INVZETAS_QINV  64+2176+2176
@@ -23,6 +23,10 @@
 #define _ZETAS          64+4352
 #define _INVZETAS_QINV  64+4352+4352
 #define _INVZETAS       64+4352+4352+4096+192+56+8
+#elif NIMS_TRI_NTT_MODE == 55
+#define _ZETAS          64+3328
+#define _INVZETAS_QINV  64+3328+3328
+#define _INVZETAS       64+3328+3328+3327
 #endif
 
 #ifndef __ASSEMBLER__

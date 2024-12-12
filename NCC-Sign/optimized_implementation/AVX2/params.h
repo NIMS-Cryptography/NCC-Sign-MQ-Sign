@@ -52,11 +52,30 @@
 #define GAMMA1 (1<<19)
 #define GAMMA2 262656
 #define OMEGA 80
+#elif NIMS_TRI_NTT_MODE == 55
+#define N 2048
+#define P 2048
+#define NR 2048
+#define Q 8380417
+#define QINV 58728449
+#define MONT 4193792
+#define D 11
+#define ETA 1
+#define TAU 32
+#define BETA 64
+#define GAMMA1 (1 << 18)
+#define GAMMA2 130944
+#define OMEGA 80
 #endif
 
 //packing bytes define
 
-#define POLYT1_PACKEDBYTES      ((N*(24-D))/8)
+#if (N == 2048)	 // 8380417 -> 23-bit
+#define POLYT1_PACKEDBYTES ((N * (23 - D)) / 8)
+#else
+#define POLYT1_PACKEDBYTES ((N * (24 - D)) / 8)
+#endif
+
 #define POLYT0_PACKEDBYTES      ((N*D)/8)
 #define POLYH_PACKEDBYTES	(N/8)
 
